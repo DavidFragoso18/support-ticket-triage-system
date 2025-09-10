@@ -88,6 +88,10 @@ npm run format
 5. **Agent Review**: Support agents review AI predictions and suggestions in React dashboard
 6. **Feedback Loop**: Agent corrections are stored to retrain and improve models
 
+### Phase Status
+- Phase 1 – Repository Hygiene & Foundation: In Progress
+- Phase 2 – Core AI Features: Upcoming
+
 ### Key Technologies
 - **AI/ML**: Hugging Face Transformers, spaCy, PyTorch, vector embeddings
 - **Backend**: FastAPI, PostgreSQL, SQLAlchemy, Pydantic

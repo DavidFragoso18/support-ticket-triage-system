@@ -1,0 +1,204 @@
+openapi: 3.0.3
+info:
+  title: Support Ticket Triage API (Draft)
+  version: 0.0.1
+  description: Draft contracts for ticket CRUD and AI classification. Subject to change.
+servers:
+  - url: https://api.example.com
+tags:
+  - name: Tickets
+  - name: Classification
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Ticket:
+      type: object
+      properties:
+        id: { type: string, example: "tkt_123" }
+        subject: { type: string }
+        body: { type: string }
+        email: { type: string, format: email }
+        status: { type: string, enum: [open, pending, resolved, closed], example: open }
+        priority: { type: string, enum: [low, medium, high, urgent], example: medium }
+        intent: { type: string, nullable: true, example: "billing_issue" }
+        sentiment: { type: string, enum: [negative, neutral, positive], nullable: true }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+      required: [id, subject, body, email, status, created_at, updated_at]
+    CreateTicketRequest:
+      type: object
+      properties:
+        subject: { type: string }
+        body: { type: string }
+        email: { type: string, format: email }
+      required: [subject, body, email]
+    UpdateTicketRequest:
+      type: object
+      properties:
+        subject: { type: string }
+        body: { type: string }
+        status: { type: string, enum: [open, pending, resolved, closed] }
+        priority: { type: string, enum: [low, medium, high, urgent] }
+    PaginatedTickets:
+      type: object
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/Ticket' }
+        page: { type: integer, example: 1 }
+        limit: { type: integer, example: 20 }
+        total: { type: integer, example: 42 }
+      required: [items, page, limit, total]
+    ClassifyRequest:
+      type: object
+      oneOf:
+        - required: [text]
+        - required: [ticket_id]
+      properties:
+        text: { type: string, description: Raw text to classify }
+        ticket_id: { type: string, description: Existing ticket to classify }
+    Classification:
+      type: object
+      properties:
+        intent: { type: string, example: "billing_issue" }
+        sentiment: { type: string, enum: [negative, neutral, positive], example: negative }
+        priority_score: { type: number, format: float, example: 0.87 }
+        suggestions:
+          type: array
+          items:
+            type: object
+            properties:
+              title: { type: string, example: "Double charge apology" }
+              body: { type: string, example: "Sorry about the duplicate charge..." }
+    Error:
+      type: object
+      properties:
+        message: { type: string }
+security:
+  - bearerAuth: []
+paths:
+  /tickets:
+    get:
+      tags: [Tickets]
+      summary: List tickets (paginated)
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1, default: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+        - in: query
+          name: status
+          schema: { type: string, enum: [open, pending, resolved, closed] }
+        - in: query
+          name: priority
+          schema: { type: string, enum: [low, medium, high, urgent] }
+        - in: query
+          name: q
+          schema: { type: string, description: Full-text search in subject/body }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaginatedTickets' }
+    post:
+      tags: [Tickets]
+      summary: Create a ticket
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateTicketRequest' }
+            example:
+              subject: "Can't login"
+              body: "I forgot my password."
+              email: "alice@example.com"
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Ticket' }
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /tickets/{ticket_id}:
+    get:
+      tags: [Tickets]
+      summary: Get a ticket by ID
+      parameters:
+        - in: path
+          name: ticket_id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Ticket' }
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+    patch:
+      tags: [Tickets]
+      summary: Update a ticket (partial)
+      parameters:
+        - in: path
+          name: ticket_id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpdateTicketRequest' }
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Ticket' }
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /classify:
+    post:
+      tags: [Classification]
+      summary: Classify text or an existing ticket
+      description: Send either raw text or a ticket_id.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ClassifyRequest' }
+            examples:
+              text:
+                value: { text: "I was charged twice for my subscription" }
+              ticket:
+                value: { ticket_id: "tkt_123" }
+      responses:
+        '200':
+          description: Classification result
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Classification' }
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }

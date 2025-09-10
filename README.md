@@ -18,9 +18,12 @@ Built with **FastAPI, Hugging Face, PostgreSQL, React, and AWS** — this projec
 - ✅ Code style and linting setup (Black + Ruff)
 - ✅ Contributing guidelines and pre-commit hooks
 - ✅ License and basic repository polish
-- 🔄 Core FastAPI backend structure
-- ⏳ Database schema and models
-- ⏳ Basic ML pipeline setup
+- 🔄 NLP model decisions and configuration
+- 🔄 API contracts specification (OpenAPI)
+- 🔄 Database schema documentation
+- 🔄 Environment configuration templates
+- 🔄 Architecture mapping and component layout
+- 🔄 Data seeding strategy
 
 *Next: Phase 2 – Core AI Features (NLP classification + sentiment analysis)*
 
