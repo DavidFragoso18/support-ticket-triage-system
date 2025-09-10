@@ -1,7 +1,28 @@
 # 🎟️ AI-Powered Support Ticket Triage System
 
+[![Build Status](https://github.com/yourusername/support-ticket-triage-system/workflows/CI/badge.svg)](https://github.com/yourusername/support-ticket-triage-system/actions)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+
 An intelligent helpdesk tool that automatically triages incoming support tickets, prioritizes them, and suggests responses using **AI/NLP**.  
 Built with **FastAPI, Hugging Face, PostgreSQL, React, and AWS** — this project demonstrates real-world **AI + backend + frontend + cloud deployment** skills.
+
+---
+
+## 🚧 Current Phase
+
+**Phase 1 – Repository Hygiene & Foundation** *(In Progress)*
+- ✅ Project structure and documentation
+- ✅ Code style and linting setup (Black + Ruff)
+- ✅ Contributing guidelines and pre-commit hooks
+- ✅ License and basic repository polish
+- 🔄 Core FastAPI backend structure
+- ⏳ Database schema and models
+- ⏳ Basic ML pipeline setup
+
+*Next: Phase 2 – Core AI Features (NLP classification + sentiment analysis)*
 
 ---
 
@@ -63,7 +84,11 @@ support-triage-ai/
 
 ---
 
-## 📊 System Flow
+## 📊 System Architecture
+
+![System Diagram](docs/system-diagram.png)
+
+### System Flow
 
 1. **Ticket Created** (via API, email, or Slack webhook).  
 2. **NLP Pipeline**:
