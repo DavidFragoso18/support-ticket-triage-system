@@ -12,6 +12,8 @@ dependencies = [
   "transformers==4.44.2",
   # CPU-only Torch; if install is slow, you can defer and test /health + tickets first
   "torch==2.6.0",
+  "sentence-transformers==3.0.1",
+  "numpy>=1.26",
 ]
 
 [tool.black]

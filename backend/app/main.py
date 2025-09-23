@@ -1,8 +1,11 @@
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.db.base import create_db_and_tables
-from app.api.routes import tickets, classify
+from app.api.routes import tickets, classify, suggestions
+from app.api.routes import kb, resolutions
+
 from app.nlp.pipeline import nlp  # ensures model loads at startup
 
 app = FastAPI(title="AI Ticket Triage", version="0.1.0")
@@ -27,3 +30,6 @@ def health():
 
 app.include_router(classify.router)
 app.include_router(tickets.router)
+app.include_router(suggestions.router)
+app.include_router(kb.router)
+app.include_router(resolutions.router)

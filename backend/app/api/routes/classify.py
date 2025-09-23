@@ -9,8 +9,9 @@ router = APIRouter(prefix="/classify", tags=["classify"])
 @router.post("", response_model=ClassifyOut)
 def classify(body: ClassifyIn) -> ClassifyOut:
     try:
-        intent, intent_conf, sentiment, sentiment_conf, low_conf = nlp.classify_text(body.text)
-        priority = choose_priority(intent, sentiment, low_conf, body.text)
+        text = body.text  # Use the single text field, not subject + body
+        intent, intent_conf, sentiment, sentiment_conf, low_conf = nlp.classify_text(text)
+        priority = choose_priority(intent, sentiment, low_conf, text)
         return ClassifyOut(
             intent=intent,
             sentiment=sentiment,
@@ -19,6 +20,5 @@ def classify(body: ClassifyIn) -> ClassifyOut:
             low_confidence=low_conf
         )
     except Exception as e:
-        # Log full stack; return clean 500 payload
         logger.exception("CLASSIFY_FAILED")
         raise internal_error("CLASSIFY_FAILED", "Classification failed. Please try again.")

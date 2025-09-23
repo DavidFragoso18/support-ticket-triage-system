@@ -3,10 +3,11 @@ BACKEND_DIR := backend
 APP_MODULE  := app.main:app
 PORT        := 8000
 
+
 # Use the project's venv Python (Windows path). On macOS/Linux, change to: $(BACKEND_DIR)/.venv/bin/python
 PYTHON := "backend/.venv/Scripts/python.exe"
 
-.PHONY: help up up-db up-api down logs db lint test which-python
+.PHONY: help up up-db up-api down logs db lint test which-python seed-kb seed-resolutions seed seed-tickets
 
 help:
 	@echo "make up       - Start DB + API (dev)"
@@ -47,3 +48,27 @@ test:
 
 which-python:
 	@echo "Using Python:" && $(PYTHON) -c "import sys,platform; print(sys.executable); print(platform.python_version())"
+
+
+
+seed:
+	@echo "Seeding KB articles from data/seeds/kb_articles.csv ..."
+	$(PYTHON) -m app.scripts.seed_kb
+	@echo "Seeding tickets from data/seeds/tickets ..."
+	$(PYTHON) -m app.scripts.seed_tickets
+	@echo "Seeding resolutions from data/seeds/resolutions ..."
+	$(PYTHON) -m app.scripts.seed_resolutions
+	
+
+seed-kb:
+	@echo "Seeding KB articles from data/seeds/kb_articles.csv ..."
+	$(PYTHON) -m app.scripts.seed_kb
+	
+	
+seed-resolutions:
+	@echo "Seeding resolutions from data/seeds/resolutions ..."
+	$(PYTHON) -m app.scripts.seed_resolutions
+	
+seed-tickets:
+	@echo "Seeding tickets from data/seeds/tickets ..."
+	$(PYTHON) -m app.scripts.seed_tickets
