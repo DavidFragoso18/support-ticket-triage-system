@@ -73,7 +73,49 @@ def create_ticket(
         logger.exception("CREATE_TICKET_FAILED")
         raise internal_error("CREATE_TICKET_FAILED", "Could not create ticket.")
 # ... keep create_ticket and get_ticket as you have them ...
-
+@router.get("/{ticket_id}", response_model=TicketOut)
+def get_ticket(
+    ticket_id: UUID,
+    session: Session = Depends(get_session),
+) -> TicketOut:
+    try:
+        ticket = session.get(Ticket, ticket_id)
+        if not ticket:
+            raise not_found("TICKET_NOT_FOUND", f"Ticket {ticket_id} not found.")
+        
+        # Get latest classification
+        classification = session.exec(
+            select(TicketClassification)
+            .where(TicketClassification.ticket_id == ticket_id)
+            .order_by(TicketClassification.created_at.desc())
+        ).first()
+        
+        return TicketOut(
+            id=ticket.id,
+            subject=ticket.subject,
+            body=ticket.body,
+            channel=ticket.channel,
+            customer_id=ticket.customer_id,
+            language=ticket.language,
+            created_at=ticket.created_at,
+            updated_at=ticket.updated_at,
+            classification=(
+                ClassificationOut(
+                    intent=classification.intent,
+                    sentiment=classification.sentiment,
+                    priority=classification.priority,
+                    confidence=classification.confidence,
+                    low_confidence=classification.low_confidence,
+                ) if classification else None
+            )
+        )
+        
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("GET_TICKET_FAILED")
+        raise internal_error("GET_TICKET_FAILED", "Could not retrieve ticket.")
+    
 @router.get("", response_model=TicketListOut)
 def list_tickets(
     page: int = Query(1, ge=1),
