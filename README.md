@@ -13,15 +13,12 @@ Built with **FastAPI, Hugging Face, PostgreSQL, and React** — this project dem
 
 ## 🚧 Current Phase
 
-**Phase 1 – Foundations ✅ (Completed)**  
-- ✅ GitHub repo + README, license, folder structure  
-- ✅ FastAPI backend initialized with `/tickets` and `/classify`  
-- ✅ Hugging Face NLP (zero-shot intent + sentiment) integrated  
-- ✅ PostgreSQL schema for `tickets` and `ticket_classifications`  
-- ✅ Makefile for dev workflow (up, down, test, lint, db)  
-- ✅ Smoke tests with pytest (3 passed)  
+**Phase 2 – Core Features (In progress 🚀)**  
+✅ Ticket filters (intent/sentiment/priority).  
+✅ Agent dashboard (React).  
+🚧 Smart Suggestions MVP.  
 
-*Next: Phase 2 – Core Features (filters, dashboard, Smart Suggestions MVP)*
+*Next: Phase 3 – Cloud + DevOps  
 
 ---
 
@@ -96,7 +93,7 @@ cd support-ticket-triage-system
 
 ### 2. Start Postgres (Docker)
 ```bash
-docker run --name triage-pg -e POSTGRES_PASSWORD=postgres -e POSTGRES_USER=postgres -e POSTGRES_DB=triage -p 5432:5432 -d postgres:16
+make up-db
 ```
 
 ### 3. Backend setup
@@ -110,7 +107,7 @@ pip install -e .
 
 ### 4. Run API
 ```bash
-uvicorn app.main:app --reload --port 8000
+make up-api
 ```
 Visit: [http://localhost:8000/docs](http://localhost:8000/docs)
 
