@@ -126,10 +126,10 @@ make test
 ### Phase 1 – Foundations (Done ✅)  
 - Repo hygiene, FastAPI setup, Hugging Face NLP, DB schema, smoke tests.  
 
-### Phase 2 – Core Features (Next)  
-- Ticket filters (intent/sentiment/priority).  
-- Agent dashboard (React).  
-- Smart Suggestions MVP.  
+### Phase 2 – Core Features (In progress 🚀)  
+✅ Ticket filters (intent/sentiment/priority).  
+✅ Agent dashboard (React).  
+🚧 Smart Suggestions MVP.  
 
 ### Phase 3 – Cloud + DevOps  
 - Dockerize backend + DB.  
