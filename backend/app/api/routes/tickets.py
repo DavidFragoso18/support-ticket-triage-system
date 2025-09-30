@@ -33,8 +33,8 @@ def create_ticket(
         
         # Run NLP classification
         text = ticket_data.subject + " " + ticket_data.body
-        intent, intent_score, sentiment, sentiment_score, low_conf = nlp.classify_text(text)
-        priority = choose_priority(intent, sentiment, low_conf, text)
+        intent, intent_score, sentiment, sentiment_score, low = nlp.classify_text(text)
+        priority = choose_priority(intent, sentiment, text)
 
         
         # Save classification
@@ -44,7 +44,7 @@ def create_ticket(
         sentiment=sentiment,
         priority=priority,
         confidence=intent_score,  # or min(intent_score, sentiment_score)
-        low_confidence=low_conf
+        low_confidence=low
         )
         
         session.add(classification)

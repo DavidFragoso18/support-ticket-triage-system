@@ -150,7 +150,9 @@
                   <span class="badge" :class="sentimentBadge(t.classification?.sentiment)">{{ t.classification?.sentiment || '—' }}</span>
                 </td>
                 <td class="px-4 py-3">
-                  <PriorityBadge :priority="t.classification?.priority" />
+                  <span :class="priorityBadgeClass(t.classification?.priority)" class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ring-1">
+                    {{ t.classification?.priority || '—' }}
+                  </span>
                 </td>
                 <td class="px-4 py-3 whitespace-nowrap">{{ formatDate(t.created_at) }}</td>
                 <td class="px-4 py-3 text-right">
@@ -178,7 +180,9 @@
             <article v-for="t in items" :key="t.id" class="p-4">
               <header class="mb-2 flex items-start justify-between gap-3">
                 <h2 class="text-base font-semibold leading-snug">{{ t.subject }}</h2>
-                <PriorityBadge :priority="t.classification?.priority" />
+                <span :class="priorityBadgeClass(t.classification?.priority)" class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ring-1">
+                  {{ t.classification?.priority || '—' }}
+                </span>
               </header>
               <p class="text-sm text-zinc-500 line-clamp-2">{{ t.body }}</p>
               <div class="mt-3 flex flex-wrap items-center gap-2 text-xs">
@@ -329,29 +333,12 @@ function sentimentBadge(val?: string) {
   if (val === 'neutral')  return 'badge-muted'
   return 'badge-muted'
 }
-</script>
-
-<script lang="ts">
-export default {
-  components: {
-    PriorityBadge: {
-        props: { priority: { type: String, default: '' } },
-        template: `
-        <span :class="badgeClass" class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ring-1">
-        {{ priority || '—' }}
-        </span>
-        `,
-        computed: {
-            badgeClass(): string {
-                switch (this.priority) {
-                    case 'P1': return 'bg-rose-50 text-rose-700 ring-rose-200 dark:bg-rose-900/20 dark:text-rose-300 dark:ring-rose-800'
-                    case 'P2': return 'bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-900/20 dark:text-amber-300 dark:ring-amber-800'
-                    case 'P3': return 'bg-sky-50 text-sky-700 ring-sky-200 dark:bg-sky-900/20 dark:text-sky-300 dark:ring-sky-800'
-                    default:   return 'bg-zinc-100 text-zinc-700 ring-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:ring-zinc-700'
-                }
-            }
-        }
-    }
+function priorityBadgeClass(priority?: string): string {
+  switch (priority) {
+    case 'P1': return 'bg-rose-50 text-rose-700 ring-rose-200 dark:bg-rose-900/20 dark:text-rose-300 dark:ring-rose-800'
+    case 'P2': return 'bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-900/20 dark:text-amber-300 dark:ring-amber-800'
+    case 'P3': return 'bg-sky-50 text-sky-700 ring-sky-200 dark:bg-sky-900/20 dark:text-sky-300 dark:ring-sky-800'
+    default:   return 'bg-zinc-100 text-zinc-700 ring-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:ring-zinc-700'
   }
 }
 </script>

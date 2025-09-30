@@ -1,6 +1,12 @@
 // frontend/nuxt.config.ts
 export default defineNuxtConfig({
-  devtools: { enabled: true },
+  devtools: {
+    enabled: true,
+
+    timeline: {
+      enabled: true,
+    },
+  },
 
   // ssr: false, // commented out
   experimental: {

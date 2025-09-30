@@ -28,6 +28,10 @@ class TicketOut(BaseModel):
     updated_at: datetime
     classification: Optional[ClassificationOut] = None
 
+    intent: Optional[str] = None
+    sentiment: Optional[str] = None
+    priority: Optional[str] = None
+
 class TicketListOut(BaseModel):
     items: List[TicketOut]
     page: int

@@ -11,7 +11,10 @@ def classify(body: ClassifyIn) -> ClassifyOut:
     try:
         text = body.text  # Use the single text field, not subject + body
         intent, intent_conf, sentiment, sentiment_conf, low_conf = nlp.classify_text(text)
-        priority = choose_priority(intent, sentiment, low_conf, text)
+        
+        # Fixed: choose_priority only needs intent, sentiment, and text
+        priority = choose_priority(intent, sentiment, text)
+        
         return ClassifyOut(
             intent=intent,
             sentiment=sentiment,

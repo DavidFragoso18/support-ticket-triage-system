@@ -1,6 +1,7 @@
 from transformers import pipeline
 from app.core.config import settings
 from typing import Tuple
+from app.nlp.intent_rules import rule_intent, normalize   # <-- already imported
 
 INTENT_LABELS = [
     "billing", "auth_login", "bug_issue", "feature_request",
@@ -19,26 +20,58 @@ class NLPService:
             model=settings.hf_model_sentiment
         )
 
-    def classify_text(self, text: str) -> Tuple[str, float, str, float, bool]:
-        # Intent (zero-shot)
-        intent_result = self.intent_pipe(text, candidate_labels=INTENT_LABELS, multi_label=False)
-        intent = intent_result["labels"][0]
-        intent_score = float(intent_result["scores"][0])
+    INTENT_CONF_THRESHOLD = 0.55  # used to decide when rules override
 
-        # Handle near-tie: if top two very close, mark as low confidence
+    def classify_text(self, text: str) -> Tuple[str, float, str, float, bool]:
+        # --- Normalize for both rules & model (helps with regex and tokenization) ---
+        norm_text = normalize(text)
+
+        # --- Intent via zero-shot model ---
+        intent_result = self.intent_pipe(norm_text, candidate_labels=INTENT_LABELS, multi_label=False)
+        model_intent = intent_result["labels"][0]
+        model_intent_score = float(intent_result["scores"][0])
+
+        # Check near-tie between top-2 intent scores
         near_tie = False
         if len(intent_result["scores"]) >= 2:
             delta = abs(intent_result["scores"][0] - intent_result["scores"][1])
             near_tie = delta < settings.near_tie_delta
 
-        # Sentiment
-        s = self.sentiment_pipe(text)[0]  # {'label': 'Negative', 'score': 0.98}
-        sentiment_label = s["label"].lower()
+        # --- Sentiment ---
+        s = self.sentiment_pipe(norm_text)[0]  # e.g. {'label': 'NEGATIVE', 'score': 0.98}
+        sentiment_label_raw = str(s["label"]).lower()
+        # normalize common HF outputs to our schema
+        sentiment_label = (
+            "negative" if "neg" in sentiment_label_raw else
+            "positive" if "pos" in sentiment_label_raw else
+            sentiment_label_raw  # if the model can output 'neutral'
+        )
         sentiment_score = float(s["score"])
 
-        # low_confidence heuristic
-        low_conf = (intent_score < settings.intent_low_conf) or (sentiment_score < settings.sentiment_low_conf) or near_tie
+        # --- Rule-based intent (domain overrides/fallbacks) ---
+        rule = rule_intent(norm_text)
 
-        return intent, intent_score, sentiment_label, sentiment_score, low_conf
+        # Default to model; override when confidence is low or clear rule hit
+        if rule:
+            if model_intent != rule and model_intent_score < self.INTENT_CONF_THRESHOLD:
+                final_intent = rule
+                rule_override_low = True
+            else:
+                # if model is confident, keep it; if not, prefer the rule
+                final_intent = model_intent if model_intent_score >= self.INTENT_CONF_THRESHOLD else rule
+                rule_override_low = model_intent_score < self.INTENT_CONF_THRESHOLD
+        else:
+            final_intent = model_intent
+            rule_override_low = model_intent_score < self.INTENT_CONF_THRESHOLD
+
+        # --- Low-confidence flag (any of these conditions makes it low) ---
+        low_conf = (
+            (model_intent_score < settings.intent_low_conf) or
+            (sentiment_score < settings.sentiment_low_conf) or
+            near_tie or
+            rule_override_low
+        )
+
+        return final_intent, model_intent_score, sentiment_label, sentiment_score, low_conf
 
 nlp = NLPService()
