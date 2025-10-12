@@ -25,8 +25,8 @@ def get_suggestions(ticket_id: UUID, session: Session = Depends(get_session)) ->
         pairs = suggest_for_text(session, t.body, top_k=2)
         out = []
         for art, score in pairs:
-            preview = art.content[:200] + ("..." if len(art.content) > 200 else "")
-            out.append(SuggestionOut(id=art.id, title=art.title, preview=preview, score=round(score, 4)))
+            preview = art.answer[:200] + ("..." if len(art.answer) > 200 else "")
+            out.append(SuggestionOut(id=art.id, title=art.question, preview=preview, score=round(score, 4)))
         return out
     except Exception:
         logger.exception("GET_SUGGESTIONS_FAILED")

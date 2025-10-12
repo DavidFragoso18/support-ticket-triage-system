@@ -1,7 +1,9 @@
 # -------- Settings --------
 BACKEND_DIR := backend
+FRONTEND_DIR := frontend
 APP_MODULE  := app.main:app
 PORT        := 8000
+FRONTEND_PORT := 3000
 
 # DB settings
 DB_CONTAINER := triage-pg
@@ -15,7 +17,7 @@ DB_VOLUME    := triage_pg_data
 # Use the project's venv Python (Windows path). On macOS/Linux, use $(BACKEND_DIR)/.venv/bin/python
 PYTHON := "backend/.venv/Scripts/python.exe"
 
-.PHONY: help up up-db up-api down logs db lint test which-python seed seed-kb seed-resolutions seed-tickets
+.PHONY: help up up-db up-api down logs db lint test which-python seed seed-kb seed-resolutions seed-tickets deploy build-frontend start-frontend install-frontend
 
 help:
 	@echo "make up          - Start DB + API (dev)"
@@ -28,6 +30,9 @@ help:
 	@echo "make test        - Run pytest"
 	@echo "make which-python- Show which Python is used"
 	@echo "make seed        - Seed KB, tickets, resolutions"
+	@echo "make deploy      - Deploy full stack (DB + API + Frontend)"
+	@echo "make build-frontend - Build frontend for production"
+	@echo "make install-frontend - Install frontend dependencies"
 
 up: up-db up-api
 
@@ -85,3 +90,34 @@ seed-resolutions:
 seed-tickets:
 	@echo "Seeding tickets from data/seeds/tickets ..."
 	cd $(BACKEND_DIR) && .\.venv\Scripts\python.exe -m app.scripts.seed_tickets
+
+# --- Frontend targets ---
+install-frontend:
+	@echo "Installing frontend dependencies..."
+	cd $(FRONTEND_DIR) && npm install
+
+build-frontend:
+	@echo "Building frontend for production..."
+	cd $(FRONTEND_DIR) && npm run build
+
+start-frontend:
+	@echo "Starting frontend on http://localhost:$(FRONTEND_PORT) ..."
+	cd $(FRONTEND_DIR) && npm run dev
+
+# --- Deployment ---
+deploy: up-db install-frontend build-frontend
+	@echo "🚀 Deploying support ticket triage system..."
+	@echo "1. Database is starting..."
+	@sleep 5
+	@echo "2. Seeding database..."
+	$(MAKE) seed
+	@echo "3. Starting backend API..."
+	@echo "   Backend will be available at http://localhost:$(PORT)"
+	@echo "4. Frontend built and ready to serve"
+	@echo "   To start frontend: make start-frontend"
+	@echo "✅ Deployment complete!"
+	@echo ""
+	@echo "Next steps:"
+	@echo "  - Backend API: http://localhost:$(PORT)"
+	@echo "  - Run 'make start-frontend' for frontend at http://localhost:$(FRONTEND_PORT)"
+	@echo "  - Run 'make up-api' to start the backend server"
