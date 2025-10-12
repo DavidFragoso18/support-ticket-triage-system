@@ -3,7 +3,9 @@
     <div class="mx-auto max-w-6xl p-6 space-y-6">
       <!-- Header -->
       <div class="flex flex-wrap items-center justify-between gap-4">
-        <h1 class="text-2xl font-semibold tracking-tight">Tickets</h1>
+        <h1 class="text-2xl font-semibold tracking-tight flex items-center gap-2">
+          🦈 GYM SHARK - Tickets
+        </h1>
 
         <div class="flex items-center gap-3">
           <!-- Theme toggle -->
@@ -51,53 +53,47 @@
           <div class="grid grid-cols-1 gap-6 md:grid-cols-3">
             <!-- Intent -->
             <div>
-              <label class="mb-2 block text-xs font-medium text-zinc-500">Intent</label>
-              <div class="flex flex-wrap gap-2">
-                <button
-                  v-for="opt in intentOptions" :key="opt"
-                  @click="toggleFilter(filters.intent, opt)"
-                  class="rounded-full border px-3 py-1 text-xs"
-                  :class="filters.intent.includes(opt)
-                    ? 'border-zinc-900 bg-zinc-900 text-white dark:border-white dark:bg-white dark:text-zinc-900'
-                    : 'border-zinc-300 text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800'"
-                >
-                  {{ opt.replace('_',' ') }}
-                </button>
-              </div>
+              <label for="intent-filter" class="mb-2 block text-xs font-medium text-zinc-500">Intent</label>
+              <select
+                id="intent-filter"
+                v-model="filters.intent"
+                class="w-full rounded-xl border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-500/20 dark:border-zinc-700 dark:bg-zinc-900 dark:focus:border-zinc-400"
+              >
+                <option value="">All intents</option>
+                <option v-for="opt in intentOptions" :key="opt" :value="opt">
+                  {{ opt.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) }}
+                </option>
+              </select>
             </div>
 
             <!-- Sentiment -->
             <div>
-              <label class="mb-2 block text-xs font-medium text-zinc-500">Sentiment</label>
-              <div class="flex flex-wrap gap-2">
-                <button
-                  v-for="opt in sentimentOptions" :key="opt"
-                  @click="toggleFilter(filters.sentiment, opt)"
-                  class="rounded-full border px-3 py-1 text-xs"
-                  :class="filters.sentiment.includes(opt)
-                    ? 'border-zinc-900 bg-zinc-900 text-white dark:border-white dark:bg-white dark:text-zinc-900'
-                    : 'border-zinc-300 text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800'"
-                >
-                  {{ opt }}
-                </button>
-              </div>
+              <label for="sentiment-filter" class="mb-2 block text-xs font-medium text-zinc-500">Sentiment</label>
+              <select
+                id="sentiment-filter"
+                v-model="filters.sentiment"
+                class="w-full rounded-xl border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-500/20 dark:border-zinc-700 dark:bg-zinc-900 dark:focus:border-zinc-400"
+              >
+                <option value="">All sentiments</option>
+                <option v-for="opt in sentimentOptions" :key="opt" :value="opt">
+                  {{ opt.charAt(0).toUpperCase() + opt.slice(1) }}
+                </option>
+              </select>
             </div>
 
             <!-- Priority -->
             <div>
-              <label class="mb-2 block text-xs font-medium text-zinc-500">Priority</label>
-              <div class="flex flex-wrap gap-2">
-                <button
-                  v-for="opt in priorityOptions" :key="opt"
-                  @click="toggleFilter(filters.priority, opt)"
-                  class="rounded-full border px-3 py-1 text-xs"
-                  :class="filters.priority.includes(opt)
-                    ? 'border-zinc-900 bg-zinc-900 text-white dark:border-white dark:bg-white dark:text-zinc-900'
-                    : 'border-zinc-300 text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800'"
-                >
+              <label for="priority-filter" class="mb-2 block text-xs font-medium text-zinc-500">Priority</label>
+              <select
+                id="priority-filter"
+                v-model="filters.priority"
+                class="w-full rounded-xl border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-500/20 dark:border-zinc-700 dark:bg-zinc-900 dark:focus:border-zinc-400"
+              >
+                <option value="">All priorities</option>
+                <option v-for="opt in priorityOptions" :key="opt" :value="opt">
                   {{ opt }}
-                </button>
-              </div>
+                </option>
+              </select>
             </div>
           </div>
 
@@ -231,7 +227,7 @@ function toggleTheme() {
 
 /** FILTER OPTIONS */
 const intentOptions = [
-  'billing','auth_login','bug_issue','usage_howto','refund_cancellation','outage_status','feature_request','shipping_delivery','account_management'
+  'billing','refund_cancellation','account_management','auth_login','bug_issue','usage_howto','feature_request'
 ]
 const sentimentOptions = ['negative','neutral','positive']
 const priorityOptions = ['P1','P2','P3']
@@ -240,9 +236,9 @@ const priorityOptions = ['P1','P2','P3']
 const pageSize = ref(10)
 const page = ref<number>(parseInt((route.query.page as string) || '1'))
 const filters = reactive({
-  intent: ([] as string[]).concat(toArray(route.query.intent)),
-  sentiment: ([] as string[]).concat(toArray(route.query.sentiment)),
-  priority: ([] as string[]).concat(toArray(route.query.priority)),
+  intent: (route.query.intent as string) || '',
+  sentiment: (route.query.sentiment as string) || '',
+  priority: (route.query.priority as string) || '',
 })
 const error = ref<string | null>(null)
 
@@ -256,9 +252,9 @@ const { data, pending, refresh } = useAsyncData(
         page: page.value,
         page_size: pageSize.value,
       }
-      if (filters.intent.length) params.intent = filters.intent
-      if (filters.sentiment.length) params.sentiment = filters.sentiment
-      if (filters.priority.length) params.priority = filters.priority
+      if (filters.intent) params.intent = [filters.intent]
+      if (filters.sentiment) params.sentiment = [filters.sentiment]
+      if (filters.priority) params.priority = [filters.priority]
       return await get<any>('/tickets', params)
     } catch (e: any) {
       error.value = e?.data?.detail?.message || 'Failed to load tickets.'
@@ -271,29 +267,30 @@ const { data, pending, refresh } = useAsyncData(
 const items = computed(() => data.value?.items || [])
 const total = computed(() => data.value?.total || 0)
 const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize.value)))
-const activeFilterCount = computed(() => filters.intent.length + filters.sentiment.length + filters.priority.length)
+const activeFilterCount = computed(() => {
+  let count = 0
+  if (filters.intent) count++
+  if (filters.sentiment) count++
+  if (filters.priority) count++
+  return count
+})
 
 /** ACTIONS */
-function toggleFilter(arr: string[], value: string) {
-  const i = arr.indexOf(value)
-  if (i === -1) arr.push(value)
-  else arr.splice(i, 1)
-}
 function refreshList() {
   router.replace({
     query: {
       page: String(page.value),
-      ...(filters.intent.length ? { intent: filters.intent } : {}),
-      ...(filters.sentiment.length ? { sentiment: filters.sentiment } : {}),
-      ...(filters.priority.length ? { priority: filters.priority } : {}),
+      ...(filters.intent ? { intent: filters.intent } : {}),
+      ...(filters.sentiment ? { sentiment: filters.sentiment } : {}),
+      ...(filters.priority ? { priority: filters.priority } : {}),
     },
   })
   refresh()
 }
 function resetFilters() {
-  filters.intent = []
-  filters.sentiment = []
-  filters.priority = []
+  filters.intent = ''
+  filters.sentiment = ''
+  filters.priority = ''
   page.value = 1
   refreshList()
 }

@@ -5,7 +5,7 @@ from typing import List
 class Settings(BaseSettings):
     app_env: str = "local"
     log_level: str = "INFO"
-    allowed_origins: List[str] = ["http://localhost:5173"]
+    allowed_origins: List[str] = ["http://localhost:5173", "http://localhost:3000"]
 
     database_url: str = "postgresql+psycopg://postgres:postgres@localhost:5432/triage"
 

@@ -39,12 +39,15 @@ up: up-db up-api
 # Start pgvector-enabled Postgres; create a named volume so data persists
 up-db:
 	@echo "Starting Postgres (pgvector)..."
-	-@docker volume create $(DB_VOLUME) >/dev/null
-	-@docker start $(DB_CONTAINER) >/dev/null 2>&1 || docker run --name $(DB_CONTAINER) \
+	-@docker volume create $(DB_VOLUME) >nul 2>&1
+	-@docker stop $(DB_CONTAINER) >nul 2>&1
+	-@docker rm $(DB_CONTAINER) >nul 2>&1
+	@docker run --name $(DB_CONTAINER) \
 		-e POSTGRES_PASSWORD=$(DB_PASS) -e POSTGRES_USER=$(DB_USER) -e POSTGRES_DB=$(DB_NAME) \
 		-p $(DB_PORT):5432 -v $(DB_VOLUME):/var/lib/postgresql/data -d $(DB_IMAGE)
 	@echo "Ensuring pgvector extension exists..."
-	-@docker exec -t $(DB_CONTAINER) psql -U $(DB_USER) -d $(DB_NAME) -c "CREATE EXTENSION IF NOT EXISTS vector;" >/dev/null 2>&1 || true
+	@powershell -Command "Start-Sleep -Seconds 3"
+	-@docker exec -t $(DB_CONTAINER) psql -U $(DB_USER) -d $(DB_NAME) -c "CREATE EXTENSION IF NOT EXISTS vector;" >nul 2>&1
 
 up-api:
 	@echo "Starting FastAPI on http://localhost:$(PORT) ..."
@@ -108,7 +111,7 @@ start-frontend:
 deploy: up-db install-frontend build-frontend
 	@echo "🚀 Deploying support ticket triage system..."
 	@echo "1. Database is starting..."
-	@sleep 5
+	@powershell -Command "Start-Sleep -Seconds 5"
 	@echo "2. Seeding database..."
 	$(MAKE) seed
 	@echo "3. Starting backend API..."

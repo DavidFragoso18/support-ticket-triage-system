@@ -4,9 +4,8 @@ from typing import Tuple
 from app.nlp.intent_rules import rule_intent, normalize   # <-- already imported
 
 INTENT_LABELS = [
-    "billing", "auth_login", "bug_issue", "feature_request",
-    "account_management", "shipping_delivery", "refund_cancellation",
-    "usage_howto", "outage_status", "other"
+    "billing", "refund_cancellation", "account_management", "auth_login", 
+    "bug_issue", "usage_howto", "feature_request", "other"
 ]
 
 class NLPService:
