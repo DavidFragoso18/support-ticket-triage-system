@@ -61,6 +61,7 @@ def create_ticket(
             created_at=ticket.created_at,
             updated_at=ticket.updated_at,
             classification=ClassificationOut(
+                id=classification.id,
                 intent=classification.intent,
                 sentiment=classification.sentiment,
                 priority=classification.priority,
@@ -101,6 +102,7 @@ def get_ticket(
             updated_at=ticket.updated_at,
             classification=(
                 ClassificationOut(
+                    id=classification.id,
                     intent=classification.intent,
                     sentiment=classification.sentiment,
                     priority=classification.priority,
@@ -187,6 +189,7 @@ def list_tickets(
                     updated_at=t.updated_at,
                     classification=(
                         ClassificationOut(
+                            id=cl.id,
                             intent=cl.intent,
                             sentiment=cl.sentiment,
                             priority=cl.priority,

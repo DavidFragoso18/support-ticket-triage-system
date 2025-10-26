@@ -4,6 +4,7 @@ from datetime import datetime
 from uuid import UUID
 
 class ClassificationOut(BaseModel):
+    id: UUID
     intent: str
     sentiment: str
     priority: str
