@@ -13,12 +13,14 @@ Built with **FastAPI, Hugging Face, PostgreSQL, and React** — this project dem
 
 ## 🚧 Current Phase
 
-**Phase 2 – Core Features (In progress 🚀)**  
-✅ Ticket filters (intent/sentiment/priority).  
-✅ Agent dashboard (React).  
-🚧 Smart Suggestions MVP.  
+**Phase 3 – Cloud + DevOps (In progress 🚀)**  
+✅ Docker containerization (multi-stage builds).  
+✅ Docker Compose orchestration.  
+✅ CI/CD with GitHub Actions.  
+✅ AWS deployment automation scripts.  
+🚧 Production deployment verification.  
 
-*Next: Phase 3 – Cloud + DevOps  
+*Next: Phase 4 – Advanced AI Features  
 
 ---
 
@@ -118,20 +120,192 @@ make test
 
 ---
 
-## 📊 Roadmap
+## � Docker Deployment
+
+### Quick Start with Docker Compose
+
+The easiest way to run the entire stack (backend + frontend + database):
+
+```bash
+# Clone repository
+git clone https://github.com/DavidFragoso18/support-ticket-triage-system.git
+cd support-ticket-triage-system
+
+# Copy environment file and configure
+cp .env.docker .env
+# Edit .env if needed
+
+# Start all services
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Access the application
+# Backend API: http://localhost:8000/docs
+# Frontend: http://localhost:3000
+# Database: localhost:5432
+```
+
+### Docker Commands
+
+```bash
+# Build images
+docker-compose build
+
+# Start services in detached mode
+docker-compose up -d
+
+# View logs
+docker-compose logs -f backend
+docker-compose logs -f frontend
+docker-compose logs -f db
+
+# Stop services
+docker-compose down
+
+# Stop and remove volumes (clean state)
+docker-compose down -v
+
+# Rebuild and restart specific service
+docker-compose up -d --build backend
+
+# Execute commands in running containers
+docker-compose exec backend python -m app.scripts.seed_kb
+docker-compose exec backend pytest tests/
+
+# Check service status
+docker-compose ps
+```
+
+### Build Individual Images
+
+```bash
+# Build backend image
+cd backend
+docker build -t triage-backend:latest .
+
+# Build frontend image
+cd frontend
+docker build -t triage-frontend:latest .
+
+# Run backend container
+docker run -p 8000:8000 \
+  -e DATABASE_URL=postgresql+psycopg://postgres:postgres@host.docker.internal:5432/triage \
+  triage-backend:latest
+```
+
+---
+
+## ☁️ AWS Cloud Deployment
+
+Deploy the complete system to AWS with automated scripts.
+
+### Prerequisites
+
+- AWS Account with appropriate permissions
+- AWS CLI installed and configured (`aws configure`)
+- Docker installed locally (for building images)
+
+### Automated Deployment
+
+```bash
+# 1. Configure AWS CLI
+aws configure
+
+# 2. Run infrastructure setup (creates VPC, EC2, RDS, S3)
+cd infra
+chmod +x setup-aws.sh
+./setup-aws.sh
+
+# This will create:
+# - VPC with subnets and security groups
+# - RDS PostgreSQL 16 with pgvector
+# - S3 bucket for attachments
+# - EC2 instance (t3.medium)
+# - SSH key pair (triage-key.pem)
+
+# 3. SSH to EC2 instance
+ssh -i triage-key.pem ubuntu@<EC2_PUBLIC_IP>
+
+# 4. Setup EC2 instance
+wget https://raw.githubusercontent.com/DavidFragoso18/support-ticket-triage-system/main/infra/setup-ec2.sh
+chmod +x setup-ec2.sh
+./setup-ec2.sh
+
+# Logout and login again
+exit
+ssh -i triage-key.pem ubuntu@<EC2_PUBLIC_IP>
+
+# 5. Deploy application
+git clone https://github.com/DavidFragoso18/support-ticket-triage-system.git
+cd support-ticket-triage-system
+
+# Configure environment
+cp .env.docker .env
+# Edit .env with RDS endpoint and credentials from setup-aws.sh output
+
+# Start services
+docker-compose up -d
+
+# Initialize database
+docker-compose exec backend python -m app.scripts.seed_kb
+docker-compose exec backend python -m app.scripts.seed_tickets
+```
+
+### CI/CD with GitHub Actions
+
+The repository includes automated CI/CD pipeline that:
+
+1. **Runs tests** on every push and pull request
+2. **Builds Docker images** and pushes to GitHub Container Registry
+3. **Deploys to AWS EC2** automatically on push to `main` branch
+
+To enable automatic deployment, add these secrets to your GitHub repository:
+
+- `AWS_ACCESS_KEY_ID`: Your AWS access key
+- `AWS_SECRET_ACCESS_KEY`: Your AWS secret key
+- `AWS_REGION`: Your AWS region (e.g., us-east-1)
+- `EC2_HOST`: Your EC2 public IP or domain
+- `EC2_USER`: ubuntu
+- `EC2_SSH_KEY`: Contents of your triage-key.pem file
+
+### Manual AWS Setup
+
+For detailed manual setup instructions, see: **[docs/aws-deployment.md](docs/aws-deployment.md)**
+
+### Cleanup AWS Resources
+
+To delete all AWS resources and avoid charges:
+
+```bash
+cd infra
+chmod +x cleanup-aws.sh
+./cleanup-aws.sh
+```
+
+**⚠️ WARNING**: This will permanently delete all resources including databases!
+
+---
+
+## �📊 Roadmap
 
 ### Phase 1 – Foundations (Done ✅)  
 - Repo hygiene, FastAPI setup, Hugging Face NLP, DB schema, smoke tests.  
 
 ### Phase 2 – Core Features (In progress 🚀)  
 ✅ Ticket filters (intent/sentiment/priority).  
-✅ Agent dashboard (React).  
+✅ Agent dashboard (Vue/Nuxt).  
 🚧 Smart Suggestions MVP.  
 
-### Phase 3 – Cloud + DevOps  
-- Dockerize backend + DB.  
-- Deploy to AWS (EC2 + RDS + S3).  
-- GitHub Actions CI/CD.  
+### Phase 3 – Cloud + DevOps (In progress 🚀)  
+✅ Multi-stage Dockerfiles for backend + frontend.  
+✅ Docker Compose orchestration.  
+✅ GitHub Actions CI/CD pipeline.  
+✅ AWS deployment scripts (EC2, RDS, S3).  
+✅ Infrastructure automation (shell scripts).  
+🚧 Terraform/CloudFormation templates (optional).  
+⬜ Production deployment and monitoring.  
 
 ### Phase 4 – Advanced AI Features  
 - Feedback loop.  

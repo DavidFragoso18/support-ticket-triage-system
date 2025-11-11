@@ -1,0 +1,83 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database with pgvector extension
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: triage-pg
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-triage}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/app/scripts:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - triage-network
+
+  # FastAPI Backend with AI/ML models
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: triage-backend
+    environment:
+      APP_ENV: ${APP_ENV:-production}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:5173}
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-triage}
+      HF_MODEL_INTENT: ${HF_MODEL_INTENT:-facebook/bart-large-mnli}
+      HF_MODEL_SENTIMENT: ${HF_MODEL_SENTIMENT:-cardiffnlp/twitter-roberta-base-sentiment-latest}
+      INTENT_LOW_CONF: ${INTENT_LOW_CONF:-0.50}
+      SENTIMENT_LOW_CONF: ${SENTIMENT_LOW_CONF:-0.60}
+      NEAR_TIE_DELTA: ${NEAR_TIE_DELTA:-0.05}
+    ports:
+      - "${API_PORT:-8000}:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./backend/app:/app/app
+      - huggingface_cache:/home/appuser/.cache/huggingface
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - triage-network
+    restart: unless-stopped
+
+  # Frontend (Nuxt.js/Vue)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: triage-frontend
+    environment:
+      NUXT_PUBLIC_API_BASE_URL: ${NUXT_PUBLIC_API_BASE_URL:-http://localhost:8000}
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    depends_on:
+      - backend
+    networks:
+      - triage-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+  huggingface_cache:
+    driver: local
+
+networks:
+  triage-network:
+    driver: bridge

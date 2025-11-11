@@ -17,24 +17,56 @@ DB_VOLUME    := triage_pg_data
 # Use the project's venv Python (Windows path). On macOS/Linux, use $(BACKEND_DIR)/.venv/bin/python
 PYTHON := "backend/.venv/Scripts/python.exe"
 
-.PHONY: help up up-db up-api down logs db lint test which-python seed seed-kb seed-resolutions seed-tickets deploy build-frontend start-frontend install-frontend
+# Docker Compose settings
+DOCKER_COMPOSE := docker-compose
+ENV_FILE := .env
+
+.PHONY: help up up-local up-db up-api down down-db logs db lint test which-python seed seed-kb seed-resolutions seed-tickets deploy deploy-local build-frontend start-frontend install-frontend docker-up docker-down docker-logs docker-build docker-deploy docker-clean
 
 help:
-	@echo "make up          - Start DB + API (dev)"
+	@echo "=== Quick Commands (Docker Compose) ==="
+	@echo "make up          - Start all services with Docker Compose"
+	@echo "make down        - Stop all Docker Compose services"
+	@echo "make deploy      - Build and deploy with Docker Compose"
+	@echo ""
+	@echo "=== Docker Compose ==="
+	@echo "make docker-up   - Start all services"
+	@echo "make docker-down - Stop all services"
+	@echo "make docker-logs - View logs (all services)"
+	@echo "make docker-build- Build Docker images"
+	@echo "make docker-deploy - Build and deploy"
+	@echo "make docker-clean- Stop and remove all (including volumes)"
+	@echo ""
+	@echo "=== Local Development (venv) ==="
+	@echo "make up-local    - Start DB + API (dev with venv)"
 	@echo "make up-db       - Start Postgres (pgvector) only"
 	@echo "make up-api      - Start FastAPI only (uses venv python)"
-	@echo "make down        - Stop & remove the Postgres container"
-	@echo "make logs        - Tail Postgres logs"
+	@echo "make down-db     - Stop local Postgres container"
+	@echo ""
+	@echo "=== Database ==="
 	@echo "make db          - psql into triage DB"
+	@echo "make seed        - Seed KB, tickets, resolutions"
+	@echo ""
+	@echo "=== Development ==="
+	@echo "make logs        - Tail Postgres logs"
 	@echo "make lint        - Ruff + Black check"
 	@echo "make test        - Run pytest"
 	@echo "make which-python- Show which Python is used"
-	@echo "make seed        - Seed KB, tickets, resolutions"
-	@echo "make deploy      - Deploy full stack (DB + API + Frontend)"
+	@echo ""
+	@echo "=== Frontend ==="
 	@echo "make build-frontend - Build frontend for production"
 	@echo "make install-frontend - Install frontend dependencies"
+	@echo ""
+	@echo "=== Quick Commands ==="
+	@echo "make deploy      - Deploy full stack with Docker Compose"
 
-up: up-db up-api
+# Main targets (Docker Compose by default)
+up: docker-up
+
+down: docker-down
+
+# Legacy local development targets
+up-local: up-db up-api
 
 # Start pgvector-enabled Postgres; create a named volume so data persists
 up-db:
@@ -53,9 +85,11 @@ up-api:
 	@echo "Starting FastAPI on http://localhost:$(PORT) ..."
 	$(PYTHON) -m uvicorn $(APP_MODULE) --reload --port $(PORT) --app-dir $(BACKEND_DIR)
 
-down:
+down-db:
+	@echo "Stopping local Postgres container..."
 	-@docker stop $(DB_CONTAINER)
 	-@docker rm $(DB_CONTAINER)
+	@echo "✅ Database stopped!"
 
 logs:
 	docker logs -f $(DB_CONTAINER)
@@ -107,11 +141,72 @@ start-frontend:
 	@echo "Starting frontend on http://localhost:$(FRONTEND_PORT) ..."
 	cd $(FRONTEND_DIR) && npm run dev
 
-# --- Deployment ---
-deploy: up-db install-frontend build-frontend
-	@echo "🚀 Deploying support ticket triage system..."
+# --- Docker Compose Commands ---
+docker-up:
+	@echo "🐳 Starting all services with Docker Compose..."
+	@if [ ! -f "$(ENV_FILE)" ]; then \
+		echo "📝 Creating .env from .env.docker..."; \
+		cp .env.docker .env; \
+	fi
+	$(DOCKER_COMPOSE) up -d
+	@echo "✅ Services started!"
+	@echo ""
+	@echo "Access URLs:"
+	@echo "  Backend API: http://localhost:8000/docs"
+	@echo "  Frontend: http://localhost:3000"
+	@echo ""
+	@echo "View logs: make docker-logs"
+
+docker-down:
+	@echo "🛑 Stopping all Docker Compose services..."
+	$(DOCKER_COMPOSE) down
+	@echo "✅ Services stopped!"
+
+docker-logs:
+	@echo "📋 Viewing Docker Compose logs (Ctrl+C to exit)..."
+	$(DOCKER_COMPOSE) logs -f
+
+docker-build:
+	@echo "🔨 Building Docker images..."
+	$(DOCKER_COMPOSE) build
+	@echo "✅ Build complete!"
+
+docker-deploy: docker-build
+	@echo "🚀 Deploying with Docker Compose..."
+	@if [ ! -f "$(ENV_FILE)" ]; then \
+		echo "📝 Creating .env from .env.docker..."; \
+		cp .env.docker .env; \
+	fi
+	$(DOCKER_COMPOSE) up -d
+	@echo ""
+	@echo "⏳ Waiting for services to start (30 seconds)..."
+	@sleep 30
+	@echo ""
+	@echo "✅ Deployment complete!"
+	@echo ""
+	@echo "Access URLs:"
+	@echo "  Backend API: http://localhost:8000/docs"
+	@echo "  Frontend: http://localhost:3000"
+	@echo "  Database: localhost:5432"
+	@echo ""
+	@echo "Useful commands:"
+	@echo "  make docker-logs  - View logs"
+	@echo "  make docker-down  - Stop services"
+	@echo "  make seed         - Seed database"
+
+docker-clean:
+	@echo "🗑️  Cleaning up Docker Compose resources..."
+	$(DOCKER_COMPOSE) down -v
+	@echo "✅ Cleanup complete!"
+
+# --- Deployment (Docker Compose) ---
+deploy: docker-deploy
+
+# Legacy local deployment
+deploy-local: up-db install-frontend build-frontend
+	@echo "🚀 Deploying support ticket triage system (local dev)..."
 	@echo "1. Database is starting..."
-	@powershell -Command "Start-Sleep -Seconds 5"
+	@sleep 5
 	@echo "2. Seeding database..."
 	$(MAKE) seed
 	@echo "3. Starting backend API..."
