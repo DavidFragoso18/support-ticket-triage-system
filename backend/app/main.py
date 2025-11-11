@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.db.base import create_db_and_tables
 from app.api.routes import tickets, classify, suggestions
-from app.api.routes import kb, resolutions, feedback, analytics
+from app.api.routes import kb, resolutions, feedback, analytics, search
 
 from app.nlp.pipeline import nlp  # ensures model loads at startup
 
@@ -35,3 +35,4 @@ app.include_router(kb.router)
 app.include_router(resolutions.router)
 app.include_router(feedback.router)
 app.include_router(analytics.router)
+app.include_router(search.router)

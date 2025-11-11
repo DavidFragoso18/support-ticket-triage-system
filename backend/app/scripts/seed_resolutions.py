@@ -3,7 +3,8 @@ from pathlib import Path
 from sqlmodel import Session
 from app.db.base import engine, create_db_and_tables
 from app.db.models.resolutions import Resolution
-from uuid import UUID;
+from app.nlp.embeddings import emb
+from uuid import UUID
 
 CSV_PATH = Path(__file__).resolve().parents[3] / "data" / "seeds" / "resolutions.csv"
 
@@ -24,13 +25,24 @@ def main():
         reader = csv.DictReader(f)
         count = 0
         for row in reader:
-            ticket_id = parse_uuid_or_none(row.get("ticket_id"))
-            summary = (row.get("summary") or "").strip()
-            details = (row.get("details") or "").strip()
-            if not summary or not details:
-                print(f"[seed] Skipping row with missing summary/details: {row}")
+            intent = (row.get("intent") or "general_inquiry").strip()
+            title = (row.get("title") or row.get("summary") or "").strip()
+            body = (row.get("body") or row.get("details") or "").strip()
+            
+            if not title or not body:
+                print(f"[seed] Skipping row with missing title/body: {row}")
                 continue
-            session.add(Resolution(ticket_id=ticket_id, summary=summary, details=details))
+            
+            # Generate embedding
+            text_for_embedding = f"{intent} {title} {body}"
+            embedding_list = emb.encode_to_list(text_for_embedding)
+            
+            session.add(Resolution(
+                intent=intent,
+                title=title,
+                body=body,
+                embedding=embedding_list
+            ))
             count += 1
         session.commit()
     print(f"[seed] Resolutions seeded: {count}")

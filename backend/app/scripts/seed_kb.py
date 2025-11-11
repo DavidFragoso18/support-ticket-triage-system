@@ -22,16 +22,21 @@ def main(csv_path: str):
         
         # Insert new articles
         for _, row in df.iterrows():
-            text_for_embedding = f"{row['question']} {row['answer']} {row['keywords']}"
-            vector = emb.encode_text(text_for_embedding)
+            title = row.get('title', row.get('question', 'Untitled'))
+            body = row.get('body', row.get('answer', ''))
+            category = row.get('category', 'general')
+            tags = row.get('tags', row.get('keywords', ''))
+            
+            # Generate embedding
+            text_for_embedding = f"{title} {body} {tags}"
+            embedding_list = emb.encode_to_list(text_for_embedding)
+            
             article = KBArticle(
-                category=row['category'],
-                question=row['question'],
-                answer=row['answer'],
-                keywords=row['keywords'],
-                intent=row.get('intent'),  # Optional
-                priority=row.get('priority'),  # Optional
-                embedding=vector,
+                title=title,
+                body=body,
+                category=category,
+                tags=tags,
+                embedding=embedding_list,
             )
             session.add(article)
         

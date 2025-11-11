@@ -3,9 +3,10 @@ from app.core.config import settings
 
 def _import_models():
     # Import to register tables in SQLModel.metadata
-    import app.db.models.ticket    # noqa: F401
-    import app.db.models.kb        # noqa: F401
-    import app.db.models.resolutions
+    import app.db.models.ticket         # noqa: F401
+    import app.db.models.kb             # noqa: F401
+    import app.db.models.resolutions    # noqa: F401
+    import app.db.models.feedback       # noqa: F401
 
 engine = create_engine(
     settings.database_url,
