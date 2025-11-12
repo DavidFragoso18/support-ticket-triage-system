@@ -48,6 +48,38 @@ class ClassificationAccuracy(BaseModel):
     sentiment_corrected: int
     priority_accepted: int
     priority_corrected: int
+    total_feedback: int
+
+
+class AgentPerformance(BaseModel):
+    """Agent performance metrics"""
+    agent_id: str
+    tickets_claimed: int
+    tickets_resolved: int
+    avg_resolution_time_seconds: float
+    total_active_time_seconds: float
+    feedback_given: int
+    avg_feedback_rating: float
+
+
+class TrendData(BaseModel):
+    """Ticket trends over time"""
+    date: str
+    total_tickets: int
+    high_priority: int
+    resolved: int
+    avg_resolution_time: float
+
+
+class AnalyticsDashboard(BaseModel):
+    """Complete analytics dashboard data"""
+    overview: AnalyticsOverview
+    intent_distribution: List[IntentDistribution]
+    sentiment_distribution: List[SentimentDistribution]
+    priority_distribution: List[PriorityDistribution]
+    trends: List[TrendData]
+    top_agents: List[AgentPerformance]
+    model_accuracy: ClassificationAccuracy
     
     # Total feedback
     total_feedback: int

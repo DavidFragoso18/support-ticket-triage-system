@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, BackgroundTasks
 from typing import Optional, List
 from uuid import UUID
 from sqlmodel import select, func, Session
@@ -9,13 +9,15 @@ from app.schemas.ticket import TicketCreate, TicketOut, TicketListOut, Classific
 from app.nlp.pipeline import nlp
 from app.nlp.embeddings import emb
 from app.services.priority_rules import choose_priority
+from app.services.websocket_manager import manager
 from app.core.errors import internal_error, not_found, logger
 
 router = APIRouter(prefix="/tickets", tags=["tickets"])
 
 @router.post("", status_code=201, response_model=TicketOut)
-def create_ticket(
+async def create_ticket(
     ticket_data: TicketCreate,
+    background_tasks: BackgroundTasks,
     session: Session = Depends(get_session),
 ) -> TicketOut:
     try:
@@ -65,7 +67,7 @@ def create_ticket(
         session.commit()
         session.refresh(classification)
         
-        return TicketOut(
+        ticket_out = TicketOut(
             id=ticket.id,
             subject=ticket.subject,
             body=ticket.body,
@@ -83,6 +85,22 @@ def create_ticket(
                 low_confidence=classification.low_confidence,
             )
         )
+        
+        # Broadcast new ticket to all connected clients
+        background_tasks.add_task(
+            manager.broadcast_ticket_update,
+            "ticket_created",
+            ticket_out.model_dump()
+        )
+        
+        # Send high-priority alert if urgent
+        if priority in ["urgent", "high"]:
+            background_tasks.add_task(
+                manager.broadcast_high_priority_alert,
+                ticket_out.model_dump()
+            )
+        
+        return ticket_out
         
     except Exception:
         logger.exception("CREATE_TICKET_FAILED")

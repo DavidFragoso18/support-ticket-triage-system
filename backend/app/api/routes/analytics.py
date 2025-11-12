@@ -261,3 +261,179 @@ def get_classification_accuracy(
     except Exception:
         logger.exception("GET_CLASSIFICATION_ACCURACY_FAILED")
         raise internal_error("GET_CLASSIFICATION_ACCURACY_FAILED", "Could not retrieve accuracy metrics.")
+
+
+@router.get("/trends")
+def get_trends(
+    days: int = Query(default=7, ge=1, le=90),
+    session: Session = Depends(get_session),
+):
+    """Get ticket trends over time"""
+    try:
+        from app.schemas.analytics import TrendData
+        
+        trends = []
+        end_date = datetime.utcnow().date()
+        
+        for i in range(days):
+            current_date = end_date - timedelta(days=i)
+            next_date = current_date + timedelta(days=1)
+            
+            # Total tickets created on this day
+            total_tickets = session.exec(
+                select(func.count(Ticket.id))
+                .where(Ticket.created_at >= current_date)
+                .where(Ticket.created_at < next_date)
+            ).one()
+            
+            # High priority tickets
+            high_priority = session.exec(
+                select(func.count(TicketClassification.id))
+                .join(Ticket, TicketClassification.ticket_id == Ticket.id)
+                .where(Ticket.created_at >= current_date)
+                .where(Ticket.created_at < next_date)
+                .where(TicketClassification.priority.in_(["urgent", "high", "P1", "P2"]))
+            ).one()
+            
+            # Resolved tickets (with status)
+            resolved = session.exec(
+                select(func.count(Ticket.id))
+                .where(Ticket.created_at >= current_date)
+                .where(Ticket.created_at < next_date)
+                .where(Ticket.status == "resolved")
+            ).one()
+            
+            trends.append(TrendData(
+                date=current_date.isoformat(),
+                total_tickets=total_tickets,
+                high_priority=high_priority,
+                resolved=resolved,
+                avg_resolution_time=0.0  # TODO: Calculate when we track resolution times
+            ))
+        
+        return {"trends": trends[::-1]}  # Reverse to get chronological order
+        
+    except Exception:
+        logger.exception("GET_TRENDS_FAILED")
+        raise internal_error("GET_TRENDS_FAILED", "Could not retrieve trend data.")
+
+
+@router.get("/agents/performance")
+def get_agent_performance(
+    days: int = Query(default=7, ge=1, le=90),
+    session: Session = Depends(get_session),
+):
+    """Get agent performance metrics"""
+    try:
+        from app.schemas.analytics import AgentPerformance
+        from app.db.models.analytics import AgentActivity, SuggestionFeedback
+        
+        start_date = datetime.utcnow() - timedelta(days=days)
+        
+        # Get all agents who have been active
+        agents = session.exec(
+            select(AgentActivity.agent_id)
+            .where(AgentActivity.timestamp >= start_date)
+            .distinct()
+        ).all()
+        
+        performance_data = []
+        
+        for agent_id in agents:
+            # Tickets claimed
+            tickets_claimed = session.exec(
+                select(func.count(AgentActivity.id))
+                .where(AgentActivity.agent_id == agent_id)
+                .where(AgentActivity.action == "claimed")
+                .where(AgentActivity.timestamp >= start_date)
+            ).one()
+            
+            # Tickets resolved
+            tickets_resolved = session.exec(
+                select(func.count(AgentActivity.id))
+                .where(AgentActivity.agent_id == agent_id)
+                .where(AgentActivity.action == "resolved")
+                .where(AgentActivity.timestamp >= start_date)
+            ).one()
+            
+            # Average resolution time
+            avg_resolution_time = session.exec(
+                select(func.avg(AgentActivity.duration_seconds))
+                .where(AgentActivity.agent_id == agent_id)
+                .where(AgentActivity.action == "resolved")
+                .where(AgentActivity.timestamp >= start_date)
+            ).one() or 0.0
+            
+            # Total active time
+            total_active_time = session.exec(
+                select(func.sum(AgentActivity.duration_seconds))
+                .where(AgentActivity.agent_id == agent_id)
+                .where(AgentActivity.timestamp >= start_date)
+            ).one() or 0.0
+            
+            # Feedback given
+            feedback_given = session.exec(
+                select(func.count(SuggestionFeedback.id))
+                .where(SuggestionFeedback.agent_id == agent_id)
+                .where(SuggestionFeedback.timestamp >= start_date)
+            ).one()
+            
+            # Average feedback rating
+            avg_rating = session.exec(
+                select(func.avg(SuggestionFeedback.rating))
+                .where(SuggestionFeedback.agent_id == agent_id)
+                .where(SuggestionFeedback.timestamp >= start_date)
+            ).one() or 0.0
+            
+            performance_data.append(AgentPerformance(
+                agent_id=agent_id,
+                tickets_claimed=tickets_claimed,
+                tickets_resolved=tickets_resolved,
+                avg_resolution_time_seconds=float(avg_resolution_time),
+                total_active_time_seconds=float(total_active_time),
+                feedback_given=feedback_given,
+                avg_feedback_rating=float(avg_rating)
+            ))
+        
+        # Sort by tickets resolved (descending)
+        performance_data.sort(key=lambda x: x.tickets_resolved, reverse=True)
+        
+        return {"agents": performance_data}
+        
+    except Exception:
+        logger.exception("GET_AGENT_PERFORMANCE_FAILED")
+        raise internal_error("GET_AGENT_PERFORMANCE_FAILED", "Could not retrieve agent performance data.")
+
+
+@router.get("/dashboard")
+def get_dashboard(
+    days: int = Query(default=7, ge=1, le=90),
+    session: Session = Depends(get_session),
+):
+    """Get complete analytics dashboard data"""
+    try:
+        from app.schemas.analytics import AnalyticsDashboard
+        
+        # Get all the data components
+        overview = get_overview(session)
+        intent_dist = get_intent_distribution(session)
+        sentiment_dist = get_sentiment_distribution(session)
+        priority_dist = get_priority_distribution(session)
+        trends_data = get_trends(days, session)
+        agents_data = get_agent_performance(days, session)
+        accuracy = get_classification_accuracy(session)
+        
+        return AnalyticsDashboard(
+            overview=overview,
+            intent_distribution=intent_dist,
+            sentiment_distribution=sentiment_dist,
+            priority_distribution=priority_dist,
+            trends=trends_data["trends"],
+            top_agents=agents_data["agents"][:10],  # Top 10 agents
+            model_accuracy=accuracy,
+            total_feedback=accuracy.total_feedback
+        )
+        
+    except Exception:
+        logger.exception("GET_DASHBOARD_FAILED")
+        raise internal_error("GET_DASHBOARD_FAILED", "Could not retrieve dashboard data.")

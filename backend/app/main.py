@@ -4,7 +4,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.db.base import create_db_and_tables
 from app.api.routes import tickets, classify, suggestions
-from app.api.routes import kb, resolutions, feedback, analytics, search
+from app.api.routes import kb, resolutions, feedback, analytics, search, websocket, llm
+from app.services.websocket_manager import manager
 
 from app.nlp.pipeline import nlp  # ensures model loads at startup
 
@@ -19,10 +20,17 @@ app.add_middleware(
 )
 
 @app.on_event("startup")
-def on_startup():
+async def on_startup():
     create_db_and_tables()
     # access nlp to force model load once
     _ = nlp.intent_pipe, nlp.sentiment_pipe
+    # Initialize Redis for WebSocket pub/sub
+    await manager.connect_redis()
+
+@app.on_event("shutdown")
+async def on_shutdown():
+    # Clean up Redis connection
+    await manager.disconnect_redis()
 
 @app.get("/health")
 def health():
@@ -36,3 +44,5 @@ app.include_router(resolutions.router)
 app.include_router(feedback.router)
 app.include_router(analytics.router)
 app.include_router(search.router)
+app.include_router(websocket.router)
+app.include_router(llm.router)

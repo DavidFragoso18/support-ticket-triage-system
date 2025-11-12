@@ -1,5 +1,50 @@
 <template>
   <div class="min-h-screen bg-white text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
+    <!-- WebSocket Notification Toast -->
+    <Transition name="slide-down">
+      <div
+        v-if="showNotification"
+        class="fixed top-4 right-4 z-50 max-w-sm rounded-xl border shadow-lg"
+        :class="{
+          'bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-800': notificationType === 'info',
+          'bg-green-50 border-green-200 dark:bg-green-950 dark:border-green-800': notificationType === 'success',
+          'bg-yellow-50 border-yellow-200 dark:bg-yellow-950 dark:border-yellow-800': notificationType === 'warning',
+          'bg-red-50 border-red-200 dark:bg-red-950 dark:border-red-800': notificationType === 'error'
+        }"
+      >
+        <div class="p-4 flex items-start gap-3">
+          <div class="flex-1">
+            <p class="text-sm font-medium" :class="{
+              'text-blue-900 dark:text-blue-100': notificationType === 'info',
+              'text-green-900 dark:text-green-100': notificationType === 'success',
+              'text-yellow-900 dark:text-yellow-100': notificationType === 'warning',
+              'text-red-900 dark:text-red-100': notificationType === 'error'
+            }">{{ notificationMessage }}</p>
+          </div>
+          <button
+            @click="showNotification = false"
+            class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+          >
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </Transition>
+
+    <!-- WebSocket Connection Status -->
+    <div class="fixed bottom-4 left-4 z-40">
+      <div v-if="isConnected" class="flex items-center gap-2 px-3 py-1.5 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-full text-xs">
+        <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+        <span class="text-green-700 dark:text-green-300">Live</span>
+      </div>
+      <div v-else class="flex items-center gap-2 px-3 py-1.5 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-full text-xs">
+        <span class="w-2 h-2 bg-red-500 rounded-full"></span>
+        <span class="text-red-700 dark:text-red-300">Disconnected</span>
+      </div>
+    </div>
+
     <div class="mx-auto max-w-6xl p-6 space-y-6">
       <!-- Header -->
       <div class="flex flex-wrap items-center justify-between gap-4">
@@ -8,6 +53,17 @@
         </h1>
 
         <div class="flex items-center gap-3">
+          <!-- How It Works Link -->
+          <NuxtLink
+            to="/how-it-works"
+            class="inline-flex items-center gap-2 rounded-xl border border-zinc-300 px-3 py-2 text-sm hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-900"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+            </svg>
+            <span class="hidden sm:inline">How It Works</span>
+          </NuxtLink>
+
           <!-- Analytics Link -->
           <NuxtLink
             to="/analytics"
@@ -41,6 +97,69 @@
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M11 11V5a1 1 0 1 1 2 0v6h6a1 1 0 1 1 0 2h-6v6a1 1 0 1 1-2 0v-6H5a1 1 0 1 1 0-2h6Z"/></svg>
             New ticket
           </NuxtLink>
+        </div>
+      </div>
+
+      <!-- Semantic Search Bar -->
+      <div class="rounded-2xl border border-zinc-200 bg-white/70 p-4 dark:border-zinc-800 dark:bg-zinc-900/60">
+        <div class="flex flex-col md:flex-row gap-3">
+          <!-- Search Input -->
+          <div class="flex-1 relative">
+            <input
+              v-model="searchQuery"
+              @input="debouncedSearch"
+              @keyup.enter="search"
+              type="text"
+              placeholder="🔍 Search tickets semantically (e.g., 'login issues', 'payment problems')..."
+              class="w-full rounded-xl border border-zinc-300 pl-4 pr-10 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-zinc-700 dark:bg-zinc-900 dark:focus:border-blue-400"
+            />
+            <button
+              v-if="searchQuery"
+              @click="clearSearch"
+              class="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+            >
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- Search Mode Selector -->
+          <div class="flex items-center gap-2">
+            <select
+              v-model="searchMode"
+              @change="searchQuery && search()"
+              class="rounded-xl border border-zinc-300 px-3 py-2.5 text-sm bg-white dark:bg-zinc-900 dark:border-zinc-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            >
+              <option value="hybrid">🎯 Hybrid</option>
+              <option value="semantic">🧠 Semantic</option>
+              <option value="keyword">📝 Keyword</option>
+            </select>
+            
+            <button
+              @click="search"
+              :disabled="!searchQuery || isSearching"
+              class="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <span v-if="isSearching">Searching...</span>
+              <span v-else>Search</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Search Results Summary -->
+        <div v-if="searchResults.length > 0" class="mt-3 flex items-center justify-between text-xs text-zinc-500">
+          <span>Found {{ searchResults.length }} tickets matching "{{ searchQuery }}"</span>
+          <button
+            @click="clearSearch"
+            class="text-blue-600 hover:text-blue-700 dark:text-blue-400 font-medium"
+          >
+            Clear search
+          </button>
+        </div>
+        
+        <div v-if="searchError" class="mt-3 text-sm text-red-600 dark:text-red-400">
+          {{ searchError }}
         </div>
       </div>
 
@@ -236,6 +355,57 @@ function toggleTheme() {
   localStorage.setItem('theme', isDark.value ? 'dark' : 'light')
 }
 
+/** WEBSOCKET REAL-TIME UPDATES */
+const { isConnected, on } = useWebSocket()
+const showNotification = ref(false)
+const notificationMessage = ref('')
+const notificationType = ref<'info' | 'success' | 'warning' | 'error'>('info')
+
+// Debug: Watch connection status
+watch(isConnected, (connected) => {
+  console.log('🔌 WebSocket connection status:', connected ? 'CONNECTED' : 'DISCONNECTED')
+})
+
+// Handle new ticket creation
+on('ticket_update', (message: any) => {
+  console.log('🎯 Received ticket_update:', message)
+  if (message.event === 'ticket_created') {
+    console.log('📨 New ticket created:', message.data)
+    // Refresh the list to show new ticket
+    refresh()
+    // Show notification
+    showNotification.value = true
+    notificationMessage.value = `New ticket: ${message.data.subject}`
+    notificationType.value = 'info'
+    setTimeout(() => { showNotification.value = false }, 3000)
+  }
+})
+
+/** SEMANTIC SEARCH */
+const { searchQuery, searchMode, searchResults, isSearching, searchError, search, debouncedSearch, clearSearch } = useTicketSearch()
+
+// Handle high-priority alerts
+on('high_priority_alert', (message: any) => {
+  console.log('🚨 High priority ticket:', message.data)
+  refresh()
+  showNotification.value = true
+  notificationMessage.value = `🚨 High priority ticket: ${message.data.subject}`
+  notificationType.value = 'warning'
+  setTimeout(() => { showNotification.value = false }, 5000)
+})
+
+// Handle ticket claimed
+on('ticket_claimed', (message: any) => {
+  console.log('👤 Ticket claimed:', message.ticket_id)
+  refresh()
+})
+
+// Handle ticket released
+on('ticket_released', (message: any) => {
+  console.log('🔓 Ticket released:', message.ticket_id)
+  refresh()
+})
+
 /** FILTER OPTIONS */
 const intentOptions = [
   'billing','refund_cancellation','account_management','auth_login','bug_issue','usage_howto','feature_request'
@@ -275,8 +445,19 @@ const { data, pending, refresh } = useAsyncData(
   { immediate: true, watch: [page, filters] }
 )
 
-const items = computed(() => data.value?.items || [])
-const total = computed(() => data.value?.total || 0)
+const items = computed(() => {
+  // If search results exist, show them instead of regular tickets
+  if (searchResults.value.length > 0) {
+    return searchResults.value.map((result: any) => result.ticket)
+  }
+  return data.value?.items || []
+})
+const total = computed(() => {
+  if (searchResults.value.length > 0) {
+    return searchResults.value.length
+  }
+  return data.value?.total || 0
+})
 const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize.value)))
 const activeFilterCount = computed(() => {
   let count = 0
@@ -365,4 +546,18 @@ function priorityBadgeClass(priority?: string): string {
 .badge-amber   { @apply bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-900/20 dark:text-amber-300 dark:ring-amber-800; }
 .badge-sky     { @apply bg-sky-50 text-sky-700 ring-sky-200 dark:bg-sky-900/20 dark:text-sky-300 dark:ring-sky-800; }
 .badge-emerald { @apply bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-300 dark:ring-emerald-800; }
+
+/* Notification transition */
+.slide-down-enter-active,
+.slide-down-leave-active {
+  transition: all 0.3s ease;
+}
+.slide-down-enter-from {
+  transform: translateY(-100%);
+  opacity: 0;
+}
+.slide-down-leave-to {
+  transform: translateY(-100%);
+  opacity: 0;
+}
 </style>

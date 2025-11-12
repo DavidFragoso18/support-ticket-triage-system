@@ -72,6 +72,193 @@
             </span>
           </div>
 
+          <!-- AI Response Suggestion -->
+          <div class="mt-4 border-t border-zinc-200 pt-4 dark:border-zinc-800">
+            <div class="flex items-start justify-between gap-4 mb-3">
+              <div>
+                <h3 class="text-sm font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-purple-600 dark:text-purple-400" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2a1 1 0 0 1 .894.553l2.5 5 5.5.798a1 1 0 0 1 .555 1.706l-4 3.898.944 5.5a1 1 0 0 1-1.45 1.054L12 18.3l-4.943 2.609a1 1 0 0 1-1.45-1.054l.944-5.5-4-3.898a1 1 0 0 1 .555-1.706l5.5-.798 2.5-5A1 1 0 0 1 12 2Z"/>
+                  </svg>
+                  AI Response Suggestion
+                </h3>
+                <p class="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                  Generate intelligent response using similar tickets and KB articles
+                </p>
+              </div>
+              <div class="flex items-center gap-2">
+                <select v-model="responseTone" class="rounded-lg border border-zinc-300 px-2 py-1 text-xs dark:border-zinc-700 dark:bg-zinc-800">
+                  <option value="professional">Professional</option>
+                  <option value="friendly">Friendly</option>
+                  <option value="technical">Technical</option>
+                  <option value="empathetic">Empathetic</option>
+                </select>
+                <button
+                  @click="generateResponse"
+                  :disabled="generatingResponse"
+                  class="inline-flex items-center gap-1.5 rounded-lg border border-purple-200 px-3 py-1.5 text-sm text-purple-700 hover:bg-purple-50 disabled:opacity-50 dark:border-purple-800 dark:text-purple-400 dark:hover:bg-purple-900/20"
+                >
+                  <svg v-if="generatingResponse" class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2a1 1 0 0 1 .894.553l2.5 5 5.5.798a1 1 0 0 1 .555 1.706l-4 3.898.944 5.5a1 1 0 0 1-1.45 1.054L12 18.3l-4.943 2.609a1 1 0 0 1-1.45-1.054l.944-5.5-4-3.898a1 1 0 0 1 .555-1.706l5.5-.798 2.5-5A1 1 0 0 1 12 2Z"/>
+                  </svg>
+                  {{ generatingResponse ? 'Generating...' : 'Generate Response' }}
+                </button>
+              </div>
+            </div>
+            
+            <!-- Response Preview -->
+            <div v-if="suggestedResponse" class="space-y-3">
+              <div class="rounded-lg border border-purple-200 bg-purple-50/50 p-4 dark:border-purple-800 dark:bg-purple-900/10">
+                <div class="flex items-start justify-between gap-3 mb-2">
+                  <div class="text-xs text-purple-700 dark:text-purple-400 font-medium">
+                    Suggested Response ({{ responseInfo?.tone }} tone, {{ responseInfo?.context_used }} sources)
+                  </div>
+                  <button
+                    @click="suggestedResponse = null"
+                    class="text-purple-600 hover:text-purple-800 dark:text-purple-400 dark:hover:text-purple-300"
+                    title="Clear suggestion"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M18.3 5.71a1 1 0 0 0-1.42 0L12 10.59 7.12 5.71a1 1 0 1 0-1.42 1.42L10.59 12l-4.89 4.88a1 1 0 1 0 1.42 1.42L12 13.41l4.88 4.89a1 1 0 0 0 1.42-1.42L13.41 12l4.89-4.88a1 1 0 0 0 0-1.42Z"/>
+                    </svg>
+                  </button>
+                </div>
+                <textarea
+                  v-model="suggestedResponse"
+                  rows="8"
+                  class="w-full rounded-lg border border-purple-200 bg-white px-3 py-2 text-sm dark:border-purple-700 dark:bg-zinc-900"
+                  placeholder="Response suggestion will appear here..."
+                ></textarea>
+                <div class="flex gap-2 mt-3">
+                  <button
+                    @click="copyResponse"
+                    class="inline-flex items-center gap-1.5 rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-800"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M16 1H4a2 2 0 0 0-2 2v14h2V3h12V1zm3 4H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2zm0 16H8V7h11v14z"/>
+                    </svg>
+                    {{ copiedResponse ? 'Copied!' : 'Copy to Clipboard' }}
+                  </button>
+                  <button
+                    @click="saveResponse"
+                    :disabled="savingResponse"
+                    class="inline-flex items-center gap-1.5 rounded-lg border border-emerald-300 px-3 py-1.5 text-sm text-emerald-700 hover:bg-emerald-50 disabled:opacity-50 dark:border-emerald-800 dark:text-emerald-400 dark:hover:bg-emerald-900/20"
+                  >
+                    <svg v-if="savingResponse" class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <svg v-else-if="responseSaved" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M14.72 8.79l-4.29 4.3-1.65-1.65a1 1 0 1 0-1.41 1.41l2.35 2.36a1 1 0 0 0 1.41 0l5-5a1 1 0 0 0-1.41-1.42Z"/>
+                      <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8Z"/>
+                    </svg>
+                    <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M17 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/>
+                    </svg>
+                    {{ responseSaved ? 'Saved!' : savingResponse ? 'Saving...' : 'Save Response' }}
+                  </button>
+                  <button
+                    class="inline-flex items-center gap-1.5 rounded-lg bg-purple-600 px-3 py-1.5 text-sm text-white hover:bg-purple-700"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4h2v4h14v-4h2zm-1-4l-1.41-1.41L13 15.17V3h-2v12.17l-5.58-5.59L4 11l8 8 8-8z"/>
+                    </svg>
+                    Send Response (Coming Soon)
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Error Display -->
+            <div v-if="responseError" class="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700 dark:border-rose-900/40 dark:bg-rose-900/20 dark:text-rose-400">
+              {{ responseError }}
+            </div>
+          </div>
+
+          <!-- Saved AI Responses History -->
+          <div v-if="savedResponses && savedResponses.length > 0" class="mt-4 border-t border-zinc-200 pt-4 dark:border-zinc-800">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-sm font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-purple-600 dark:text-purple-400" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm-7 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2zM7 7h10v2H7V7zm0 4h10v2H7v-2zm0 4h7v2H7v-2z"/>
+                </svg>
+                Saved AI Responses ({{ savedResponses.length }})
+              </h3>
+              <button
+                @click="refreshSavedResponses"
+                class="text-xs text-purple-600 hover:text-purple-700 dark:text-purple-400"
+              >
+                Refresh
+              </button>
+            </div>
+            
+            <div class="space-y-2">
+              <div
+                v-for="(response, idx) in savedResponses"
+                :key="response.id"
+                class="rounded-lg border border-zinc-200 p-3 dark:border-zinc-700"
+              >
+                <div class="flex items-start justify-between gap-3 mb-2">
+                  <div class="flex items-center gap-2 text-xs">
+                    <span class="inline-flex items-center gap-1 rounded-full bg-purple-100 px-2 py-0.5 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2a1 1 0 0 1 .894.553l2.5 5 5.5.798a1 1 0 0 1 .555 1.706l-4 3.898.944 5.5a1 1 0 0 1-1.45 1.054L12 18.3l-4.943 2.609a1 1 0 0 1-1.45-1.054l.944-5.5-4-3.898a1 1 0 0 1 .555-1.706l5.5-.798 2.5-5A1 1 0 0 1 12 2Z"/>
+                      </svg>
+                      {{ response.tone }}
+                    </span>
+                    <span class="text-zinc-500 dark:text-zinc-400">
+                      {{ response.model }}
+                    </span>
+                    <span v-if="response.was_edited" class="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                      </svg>
+                      Edited
+                    </span>
+                    <span v-if="response.was_sent" class="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                      </svg>
+                      Sent
+                    </span>
+                  </div>
+                  <span class="text-xs text-zinc-400">
+                    {{ formatDate(response.created_at) }}
+                  </span>
+                </div>
+                <p class="text-sm text-zinc-700 dark:text-zinc-300 line-clamp-3">
+                  {{ response.response_text }}
+                </p>
+                <button
+                  @click="expandedResponseId = expandedResponseId === response.id ? null : response.id"
+                  class="mt-2 text-xs text-purple-600 hover:text-purple-700 dark:text-purple-400"
+                >
+                  {{ expandedResponseId === response.id ? 'Show less' : 'Show full response' }}
+                </button>
+                
+                <!-- Expanded view -->
+                <div v-if="expandedResponseId === response.id" class="mt-3 pt-3 border-t border-zinc-200 dark:border-zinc-700">
+                  <pre class="text-sm text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap font-sans">{{ response.response_text }}</pre>
+                  <div class="mt-3 flex gap-2">
+                    <button
+                      @click="copyToClipboard(response.response_text)"
+                      class="inline-flex items-center gap-1.5 rounded-lg border border-zinc-300 px-2 py-1 text-xs hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-800"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M16 1H4a2 2 0 0 0-2 2v14h2V3h12V1zm3 4H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2zm0 16H8V7h11v14z"/>
+                      </svg>
+                      Copy
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- Feedback section -->
           <div v-if="ticket.classification" class="mt-4 border-t border-zinc-200 pt-4 dark:border-zinc-800">
             <div class="flex items-center justify-between gap-4">
@@ -324,6 +511,117 @@ const { data: similarData, pending: similarPending } =
   useAsyncData(`similar-${id}`, similarReq, { immediate: true })
 
 const similarTickets = computed(() => similarData.value?.similar_tickets || [])
+
+// Saved AI Responses
+const savedResponsesReq = () => $fetch<any>(`/api/llm/saved-responses/${id}`)
+const { data: savedResponses, refresh: refreshSavedResponses } =
+  useAsyncData(`saved-responses-${id}`, savedResponsesReq, { immediate: true })
+
+const expandedResponseId = ref<string | null>(null)
+
+/** LLM RESPONSE SUGGESTION */
+const responseTone = ref('professional')
+const suggestedResponse = ref<string | null>(null)
+const responseInfo = ref<any>(null)
+const generatingResponse = ref(false)
+const responseError = ref<string | null>(null)
+const copiedResponse = ref(false)
+const savingResponse = ref(false)
+const responseSaved = ref(false)
+const originalResponse = ref<string | null>(null)
+
+async function generateResponse() {
+  generatingResponse.value = true
+  responseError.value = null
+  suggestedResponse.value = null
+  responseSaved.value = false
+  
+  try {
+    const data = await $fetch<any>(`/api/llm/suggest-response/${id}`, {
+      query: { tone: responseTone.value }
+    })
+    
+    suggestedResponse.value = data.response
+    originalResponse.value = data.response  // Store original for edit tracking
+    responseInfo.value = {
+      tone: data.tone,
+      context_used: data.context_used,
+      model: data.model
+    }
+  } catch (error: any) {
+    console.error('Failed to generate response:', error)
+    responseError.value = error.data?.error || 'Failed to generate response suggestion. Make sure Ollama is running with a model loaded.'
+  } finally {
+    generatingResponse.value = false
+  }
+}
+
+async function copyResponse() {
+  if (suggestedResponse.value) {
+    try {
+      await navigator.clipboard.writeText(suggestedResponse.value)
+      copiedResponse.value = true
+      setTimeout(() => { copiedResponse.value = false }, 2000)
+    } catch (error) {
+      console.error('Failed to copy:', error)
+    }
+  }
+}
+
+async function saveResponse() {
+  if (!suggestedResponse.value || !responseInfo.value) return
+  
+  savingResponse.value = true
+  responseError.value = null
+  
+  try {
+    const wasEdited = suggestedResponse.value !== originalResponse.value
+    
+    await $fetch('/api/llm/save-response', {
+      method: 'POST',
+      body: {
+        ticket_id: id,
+        response_text: suggestedResponse.value,
+        tone: responseInfo.value.tone,
+        context_used: responseInfo.value.context_used,
+        model: responseInfo.value.model,
+        agent_id: 'demo-agent',  // TODO: Replace with actual user ID
+        was_edited: wasEdited
+      }
+    })
+    
+    responseSaved.value = true
+    // Refresh saved responses list
+    await refreshSavedResponses()
+    setTimeout(() => { responseSaved.value = false }, 3000)
+  } catch (error: any) {
+    console.error('Failed to save response:', error)
+    responseError.value = 'Failed to save response. Please try again.'
+    setTimeout(() => { responseError.value = null }, 5000)
+  } finally {
+    savingResponse.value = false
+  }
+}
+
+function copyToClipboard(text: string) {
+  navigator.clipboard.writeText(text)
+}
+
+function formatDate(dateStr: string) {
+  try {
+    const date = new Date(dateStr)
+    const now = new Date()
+    const diffMs = now.getTime() - date.getTime()
+    const diffMins = Math.floor(diffMs / 60000)
+    
+    if (diffMins < 1) return 'Just now'
+    if (diffMins < 60) return `${diffMins}m ago`
+    if (diffMins < 1440) return `${Math.floor(diffMins / 60)}h ago`
+    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  } catch {
+    return dateStr
+  }
+}
 
 /** APPLY SUGGESTION */
 const applyingId = ref<string | null>(null)

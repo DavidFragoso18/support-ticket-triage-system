@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     allowed_origins: Union[List[str], str] = ["http://localhost:5173", "http://localhost:3000"]
 
     database_url: str = "postgresql+psycopg://postgres:postgres@localhost:5432/triage"
+    redis_url: str = "redis://localhost:6379"
     
     @field_validator("allowed_origins", mode="before")
     @classmethod
