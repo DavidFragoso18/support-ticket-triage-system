@@ -2,11 +2,16 @@
 Pytest configuration and fixtures for all tests.
 """
 import sys
+import os
 from pathlib import Path
 
 # Add the backend directory to Python path so 'app' module can be imported
-backend_dir = Path(__file__).parent.parent
-sys.path.insert(0, str(backend_dir))
+backend_dir = Path(__file__).parent.parent.resolve()
+if str(backend_dir) not in sys.path:
+    sys.path.insert(0, str(backend_dir))
+
+# Also set PYTHONPATH environment variable
+os.environ['PYTHONPATH'] = str(backend_dir) + os.pathsep + os.environ.get('PYTHONPATH', '')
 
 import pytest
 from fastapi.testclient import TestClient
