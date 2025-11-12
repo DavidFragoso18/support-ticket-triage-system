@@ -52,59 +52,6 @@
             />
           </div>
 
-          <!-- Customer ID -->
-          <div>
-            <label for="customer_id" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-              Customer ID *
-            </label>
-            <input
-              id="customer_id"
-              v-model="form.customer_id"
-              type="text"
-              required
-              placeholder="Customer identifier"
-              class="w-full rounded-xl border border-zinc-300 px-4 py-3 text-sm focus:border-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-500/20 dark:border-zinc-700 dark:bg-zinc-900 dark:focus:border-zinc-400"
-            />
-          </div>
-
-          <!-- Channel -->
-          <div>
-            <label for="channel" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-              Channel *
-            </label>
-            <select
-              id="channel"
-              v-model="form.channel"
-              required
-              class="w-full rounded-xl border border-zinc-300 px-4 py-3 text-sm focus:border-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-500/20 dark:border-zinc-700 dark:bg-zinc-900 dark:focus:border-zinc-400"
-            >
-              <option value="">Select a channel</option>
-              <option value="email">Email</option>
-              <option value="chat">Chat</option>
-              <option value="phone">Phone</option>
-              <option value="social">Social Media</option>
-              <option value="web">Web Form</option>
-            </select>
-          </div>
-
-          <!-- Language -->
-          <div>
-            <label for="language" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-              Language
-            </label>
-            <select
-              id="language"
-              v-model="form.language"
-              class="w-full rounded-xl border border-zinc-300 px-4 py-3 text-sm focus:border-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-500/20 dark:border-zinc-700 dark:bg-zinc-900 dark:focus:border-zinc-400"
-            >
-              <option value="en">English</option>
-              <option value="es">Spanish</option>
-              <option value="fr">French</option>
-              <option value="de">German</option>
-              <option value="pt">Portuguese</option>
-            </select>
-          </div>
-
           <!-- Body -->
           <div>
             <label for="body" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
@@ -114,7 +61,7 @@
               id="body"
               v-model="form.body"
               required
-              rows="8"
+              rows="12"
               placeholder="Detailed description of the issue or request..."
               class="w-full rounded-xl border border-zinc-300 px-4 py-3 text-sm focus:border-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-500/20 dark:border-zinc-700 dark:bg-zinc-900 dark:focus:border-zinc-400"
             ></textarea>
@@ -190,8 +137,8 @@ onMounted(() => {
 const form = ref({
   subject: '',
   body: '',
-  channel: '',
-  customer_id: '',
+  channel: 'web',
+  customer_id: 'customer-' + Math.random().toString(36).substring(2, 11),
   language: 'en'
 })
 
@@ -220,8 +167,8 @@ const submitTicket = async () => {
     form.value = {
       subject: '',
       body: '',
-      channel: '',
-      customer_id: '',
+      channel: 'web',
+      customer_id: 'customer-' + Math.random().toString(36).substring(2, 11),
       language: 'en'
     }
 

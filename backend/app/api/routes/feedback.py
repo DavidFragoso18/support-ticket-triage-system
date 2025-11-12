@@ -39,18 +39,22 @@ def create_feedback(
         session.commit()
         session.refresh(feedback)
         
-        # If corrected, optionally create a new classification with corrected values
+        # If corrected, update the existing classification with corrected values
         if feedback_data.action == "corrected":
-            new_classification = TicketClassification(
-                ticket_id=classification.ticket_id,
-                intent=feedback_data.corrected_intent or classification.intent,
-                sentiment=feedback_data.corrected_sentiment or classification.sentiment,
-                priority=feedback_data.corrected_priority or classification.priority,
-                confidence=1.0,  # Agent correction = 100% confidence
-                low_confidence=False,
-                source="human",  # Mark as human-corrected
-            )
-            session.add(new_classification)
+            # Update the classification with corrected values
+            if feedback_data.corrected_intent:
+                classification.intent = feedback_data.corrected_intent
+            if feedback_data.corrected_sentiment:
+                classification.sentiment = feedback_data.corrected_sentiment
+            if feedback_data.corrected_priority:
+                classification.priority = feedback_data.corrected_priority
+            
+            # Mark as human-corrected with 100% confidence
+            classification.confidence = 1.0
+            classification.low_confidence = False
+            classification.source = "human"
+            
+            session.add(classification)
             session.commit()
         
         return FeedbackOut(

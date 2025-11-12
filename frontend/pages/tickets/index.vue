@@ -8,6 +8,17 @@
         </h1>
 
         <div class="flex items-center gap-3">
+          <!-- Analytics Link -->
+          <NuxtLink
+            to="/analytics"
+            class="inline-flex items-center gap-2 rounded-xl border border-zinc-300 px-3 py-2 text-sm hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-900"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M3 13h2v8H3v-8zm4-6h2v14H7V7zm4-4h2v18h-2V3zm4 9h2v9h-2v-9zm4-3h2v12h-2V9z"/>
+            </svg>
+            <span class="hidden sm:inline">Analytics</span>
+          </NuxtLink>
+          
           <!-- Theme toggle -->
           <button
             class="inline-flex items-center gap-2 rounded-xl border border-zinc-300 px-3 py-2 text-sm hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-900"

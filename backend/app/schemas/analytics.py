@@ -34,10 +34,20 @@ class TimeSeriesData(BaseModel):
     count: int
 
 class ClassificationAccuracy(BaseModel):
-    """Model accuracy metrics"""
-    total_classifications: int
-    with_feedback: int
-    accepted: int
-    rejected: int
-    corrected: int
-    accuracy_rate: float  # % accepted / (accepted + rejected + corrected)
+    """Model accuracy metrics with per-field breakdown"""
+    # Per-field accuracy (0.0 to 1.0)
+    intent_accuracy: float
+    sentiment_accuracy: float
+    priority_accuracy: float
+    overall_accuracy: float
+    
+    # Per-field counts
+    intent_accepted: int
+    intent_corrected: int
+    sentiment_accepted: int
+    sentiment_corrected: int
+    priority_accepted: int
+    priority_corrected: int
+    
+    # Total feedback
+    total_feedback: int

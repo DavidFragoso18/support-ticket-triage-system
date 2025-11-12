@@ -7,6 +7,7 @@ from app.db.base import get_session
 from app.db.models.ticket import Ticket, TicketClassification
 from app.schemas.ticket import TicketCreate, TicketOut, TicketListOut, ClassificationOut
 from app.nlp.pipeline import nlp
+from app.nlp.embeddings import emb
 from app.services.priority_rules import choose_priority
 from app.core.errors import internal_error, not_found, logger
 
@@ -18,7 +19,11 @@ def create_ticket(
     session: Session = Depends(get_session),
 ) -> TicketOut:
     try:
-        # Create the ticket
+        # Run NLP classification
+        text = ticket_data.subject + " " + ticket_data.body
+        intent, intent_score, sentiment, sentiment_score, low = nlp.classify_text(text)
+        
+        # Create the ticket without embedding first
         ticket = Ticket(
             subject=ticket_data.subject,
             body=ticket_data.body,
@@ -31,9 +36,18 @@ def create_ticket(
         session.commit()
         session.refresh(ticket)
         
-        # Run NLP classification
-        text = ticket_data.subject + " " + ticket_data.body
-        intent, intent_score, sentiment, sentiment_score, low = nlp.classify_text(text)
+        # Generate and update embedding using raw SQL (pgvector requires casting)
+        embedding_vector = emb.encode_to_list(text)
+        embedding_str = str(embedding_vector)
+        
+        from sqlalchemy import text as sql_text
+        update_query = sql_text("""
+            UPDATE tickets 
+            SET embedding = CAST(:embedding AS vector)
+            WHERE id = CAST(:ticket_id AS uuid)
+        """)
+        session.execute(update_query, {"embedding": embedding_str, "ticket_id": str(ticket.id)})
+        session.commit()
         priority = choose_priority(intent, sentiment, text)
 
         
@@ -204,3 +218,78 @@ def list_tickets(
     except Exception:
         logger.exception("LIST_TICKETS_SQL_FAILED")
         raise internal_error("LIST_TICKETS_SQL_FAILED", "Could not list tickets.")
+
+
+@router.get("/{ticket_id}/similar")
+def get_similar_tickets(
+    ticket_id: UUID,
+    limit: int = Query(default=5, ge=1, le=20),
+    session: Session = Depends(get_session),
+):
+    """
+    Find similar tickets using vector similarity search.
+    Returns top N most similar tickets (excluding the current ticket).
+    """
+    try:
+        from sqlalchemy import text
+        
+        # First check if ticket exists and has an embedding using raw SQL
+        check_query = text("""
+            SELECT embedding FROM tickets WHERE id = CAST(:ticket_id AS uuid)
+        """)
+        
+        result = session.execute(check_query, {"ticket_id": str(ticket_id)})
+        row = result.first()
+        
+        if not row:
+            raise not_found("TICKET_NOT_FOUND", f"Ticket {ticket_id} not found")
+        
+        if not row.embedding:
+            return {"similar_tickets": []}
+        
+        # Get the embedding as string representation
+        query_embedding = str(row.embedding)
+        
+        # Build vector similarity query
+        # Using raw SQL for pgvector cosine similarity operator
+        query = text("""
+            SELECT 
+                id,
+                subject,
+                body,
+                created_at,
+                (1 - (embedding <=> CAST(:query_embedding AS vector))) as similarity
+            FROM tickets
+            WHERE id != CAST(:ticket_id AS uuid)
+                AND embedding IS NOT NULL
+                AND (1 - (embedding <=> CAST(:query_embedding AS vector))) > 0.5
+            ORDER BY embedding <=> CAST(:query_embedding AS vector)
+            LIMIT :limit
+        """)
+        
+        result = session.execute(
+            query,
+            {
+                "query_embedding": query_embedding,
+                "ticket_id": str(ticket_id),
+                "limit": limit
+            }
+        )
+        
+        similar_tickets = []
+        for row in result:
+            similar_tickets.append({
+                "id": str(row.id),
+                "subject": row.subject,
+                "preview": row.body[:150] + "..." if len(row.body) > 150 else row.body,
+                "created_at": row.created_at.isoformat(),
+                "similarity": round(float(row.similarity), 4)
+            })
+        
+        return {"similar_tickets": similar_tickets}
+        
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("GET_SIMILAR_TICKETS_FAILED")
+        raise internal_error("GET_SIMILAR_TICKETS_FAILED", "Could not retrieve similar tickets.")

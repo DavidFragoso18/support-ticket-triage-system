@@ -27,7 +27,7 @@ endif
 DOCKER_COMPOSE := docker-compose
 ENV_FILE := .env
 
-.PHONY: help up up-local up-db up-api down down-db logs db lint test which-python seed seed-kb seed-resolutions seed-tickets deploy deploy-local build-frontend start-frontend install-frontend docker-up docker-down docker-logs docker-build docker-deploy docker-clean
+.PHONY: help up up-local up-db up-api down down-db logs db lint test test-phase2 test-phase3 test-phase4 test-all-phases test-docker which-python seed seed-kb seed-resolutions deploy deploy-local build-frontend start-frontend install-frontend docker-up docker-down docker-logs docker-build docker-deploy docker-clean
 
 help:
 	@echo "=== Quick Commands (Docker Compose) ==="
@@ -51,13 +51,22 @@ help:
 	@echo ""
 	@echo "=== Database ==="
 	@echo "make db          - psql into triage DB"
-	@echo "make seed        - Seed KB, tickets, resolutions"
+	@echo "make seed        - Seed KB and resolutions"
+	@echo "make seed-kb     - Seed KB articles only"
+	@echo "make seed-resolutions - Seed resolutions only"
 	@echo ""
 	@echo "=== Development ==="
 	@echo "make logs        - Tail Postgres logs"
 	@echo "make lint        - Ruff + Black check"
-	@echo "make test        - Run pytest"
+	@echo "make test        - Run pytest (local)"
 	@echo "make which-python- Show which Python is used"
+	@echo ""
+	@echo "=== Testing (Docker) ==="
+	@echo "make test-phase2 - Run Phase 2 tests (Filters & Suggestions)"
+	@echo "make test-phase3 - Run Phase 3 tests (Analytics Dashboard)"
+	@echo "make test-phase4 - Run Phase 4 tests (Similar Tickets & Embeddings)"
+	@echo "make test-all-phases - Run all Phase 2, 3, 4 tests"
+	@echo "make test-docker - Run all tests in Docker container"
 	@echo ""
 	@echo "=== Frontend ==="
 	@echo "make build-frontend - Build frontend for production"
@@ -109,6 +118,38 @@ lint:
 test:
 	$(PYTHON) -m pytest -q --rootdir=$(BACKEND_DIR)
 
+# Phase-specific tests (run in Docker container)
+test-phase2:
+	@echo "🧪 Running Phase 2 tests (Filters & Suggestions)..."
+	docker cp backend/tests triage-backend:/app/
+	docker exec -e PYTHONPATH=/app triage-backend pytest /app/tests/test_phase2_backend.py /app/tests/test_phase2_comprehensive.py -v
+	@echo "✅ Phase 2 tests complete!"
+
+test-phase3:
+	@echo "🧪 Running Phase 3 tests (Analytics Dashboard)..."
+	docker cp backend/tests triage-backend:/app/
+	docker exec -e PYTHONPATH=/app triage-backend pytest /app/tests/test_analytics.py -v
+	@echo "✅ Phase 3 tests complete!"
+
+test-phase4:
+	@echo "🧪 Running Phase 4 tests (Similar Tickets & Embeddings)..."
+	docker cp backend/tests triage-backend:/app/
+	docker exec -e PYTHONPATH=/app triage-backend pytest /app/tests/test_similar_tickets.py /app/tests/test_embeddings.py /app/tests/test_ticket_creation.py -v
+	@echo "✅ Phase 4 tests complete!"
+
+test-all-phases:
+	@echo "🧪 Running all Phase 2, 3, and 4 tests..."
+	docker cp backend/tests triage-backend:/app/
+	docker exec -e PYTHONPATH=/app triage-backend pytest /app/tests/test_phase2_backend.py /app/tests/test_analytics.py /app/tests/test_similar_tickets.py /app/tests/test_embeddings.py /app/tests/test_ticket_creation.py -v --tb=short
+	@echo ""
+	@echo "✅ All phase tests complete!"
+
+test-docker:
+	@echo "🧪 Running all tests in Docker container..."
+	docker cp backend/tests triage-backend:/app/
+	docker exec -e PYTHONPATH=/app triage-backend pytest /app/tests/ -v --tb=short
+	@echo "✅ All tests complete!"
+
 which-python:
 	@echo "Using Python:" && $(PYTHON) -c "import sys,platform; print(sys.executable); print(platform.python_version())"
 
@@ -116,9 +157,7 @@ which-python:
 seed:
 	@echo "Seeding KB articles from data/seeds/kb_articles.csv ..."
 	cd $(BACKEND_DIR) && $(PYTHON_LOCAL) -m app.scripts.seed_kb
-	@echo "Seeding tickets from data/seeds/tickets ..."
-	cd $(BACKEND_DIR) && $(PYTHON_LOCAL) -m app.scripts.seed_tickets
-	@echo "Seeding resolutions from data/seeds/resolutions ..."
+	@echo "Seeding resolutions from data/seeds/resolutions.csv ..."
 	cd $(BACKEND_DIR) && $(PYTHON_LOCAL) -m app.scripts.seed_resolutions
 	@echo "✅ All seeds completed."
 
@@ -129,10 +168,6 @@ seed-kb:
 seed-resolutions:
 	@echo "Seeding resolutions from data/seeds/resolutions.csv ..."
 	cd $(BACKEND_DIR) && $(PYTHON_LOCAL) -m app.scripts.seed_resolutions
-
-seed-tickets:
-	@echo "Seeding tickets from data/seeds/tickets ..."
-	cd $(BACKEND_DIR) && $(PYTHON_LOCAL) -m app.scripts.seed_tickets
 
 # --- Frontend targets ---
 install-frontend:

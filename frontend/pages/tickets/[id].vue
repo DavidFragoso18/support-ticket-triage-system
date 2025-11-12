@@ -139,10 +139,21 @@
           <div v-else class="space-y-3">
             <div v-for="s in suggestions" :key="s.id" class="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
               <div class="flex items-center justify-between gap-3">
-                <div class="font-medium">{{ s.title }}</div>
-                <div class="text-xs text-zinc-500">score: {{ s.score?.toFixed?.(3) }}</div>
+                <div class="flex-1">
+                  <div class="font-medium">{{ s.title }}</div>
+                  <div class="text-xs text-zinc-500 mt-1">
+                    {{ s.type === 'kb_article' ? 'KB Article' : 'Resolution Template' }} · score: {{ s.score?.toFixed?.(3) }}
+                  </div>
+                </div>
+                <button
+                  @click="applySuggestion(s)"
+                  :disabled="applyingId === s.id"
+                  class="shrink-0 rounded-lg bg-emerald-600 px-3 py-1.5 text-sm text-white hover:bg-emerald-700 disabled:opacity-50"
+                >
+                  {{ applyingId === s.id ? 'Applying...' : 'Apply' }}
+                </button>
               </div>
-              <p class="mt-1 text-sm text-zinc-600 dark:text-zinc-300">{{ s.preview }}</p>
+              <p class="mt-2 text-sm text-zinc-600 dark:text-zinc-300">{{ s.preview }}</p>
             </div>
           </div>
         </div>
@@ -234,6 +245,54 @@
           </div>
         </div>
       </div>
+
+      <!-- Similar Tickets -->
+      <div v-if="similarTickets && similarTickets.length > 0" class="rounded-2xl border border-zinc-200 p-5 dark:border-zinc-800 bg-white/70 dark:bg-zinc-900/60">
+        <h3 class="text-lg font-semibold flex items-center gap-2 mb-4">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-600 dark:text-blue-400" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 2l5 5h-5V4zM8 18v-1h8v1H8zm0-4v-1h8v1H8zm0-4v-1h5v1H8z"/>
+          </svg>
+          Similar Tickets
+        </h3>
+        
+        <div v-if="similarPending" class="space-y-3">
+          <div v-for="i in 3" :key="i" class="animate-pulse rounded-lg border border-zinc-200 p-3 dark:border-zinc-700">
+            <div class="h-4 w-3/4 bg-zinc-100 rounded dark:bg-zinc-800"></div>
+            <div class="mt-2 h-3 w-1/2 bg-zinc-100 rounded dark:bg-zinc-800"></div>
+          </div>
+        </div>
+
+        <div v-else class="space-y-3">
+          <NuxtLink
+            v-for="similar in similarTickets"
+            :key="similar.id"
+            :to="`/tickets/${similar.id}`"
+            class="block rounded-lg border border-zinc-200 p-3 hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-800/50 transition-colors"
+          >
+            <div class="flex items-start justify-between gap-3">
+              <div class="flex-1 min-w-0">
+                <h4 class="font-medium text-sm text-zinc-900 dark:text-zinc-100 truncate">
+                  {{ similar.subject }}
+                </h4>
+                <p class="mt-1 text-xs text-zinc-500 dark:text-zinc-400 line-clamp-2">
+                  {{ similar.preview }}
+                </p>
+                <p class="mt-1 text-xs text-zinc-400">
+                  {{ new Date(similar.created_at).toLocaleDateString() }}
+                </p>
+              </div>
+              <div class="flex-shrink-0">
+                <span class="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                  </svg>
+                  {{ (similar.similarity * 100).toFixed(0) }}%
+                </span>
+              </div>
+            </div>
+          </NuxtLink>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -258,6 +317,45 @@ const { data: suggestions, pending: sugPending, error: sugError, refresh: sugRef
 // Resolutions
 const { data: resolutions, pending: resPending, error: resError, refresh: resRefresh } =
   useAsyncData(`res-${id}`, resReq, { immediate: true })
+
+// Similar Tickets
+const similarReq = () => $fetch<any>(`/api/tickets/${id}/similar`, { server: true })
+const { data: similarData, pending: similarPending } =
+  useAsyncData(`similar-${id}`, similarReq, { immediate: true })
+
+const similarTickets = computed(() => similarData.value?.similar_tickets || [])
+
+/** APPLY SUGGESTION */
+const applyingId = ref<string | null>(null)
+
+async function applySuggestion(suggestion: any) {
+  applyingId.value = suggestion.id
+  
+  try {
+    await $fetch('/api/resolutions/apply', {
+      method: 'POST',
+      body: {
+        ticket_id: id,
+        suggestion_id: suggestion.id,
+        suggestion_type: suggestion.type,
+        agent_id: 'current-user' // TODO: Replace with actual user ID
+      }
+    })
+    
+    // Refresh resolutions list to show the new resolution
+    await resRefresh()
+    
+    // Show success feedback
+    feedbackSuccess.value = true
+    setTimeout(() => { feedbackSuccess.value = false }, 3000)
+  } catch (error: any) {
+    console.error('Failed to apply suggestion:', error)
+    feedbackError.value = error.data?.detail?.message || 'Failed to apply suggestion'
+    setTimeout(() => { feedbackError.value = null }, 5000)
+  } finally {
+    applyingId.value = null
+  }
+}
 
 /** FEEDBACK */
 const showCorrectionModal = ref(false)

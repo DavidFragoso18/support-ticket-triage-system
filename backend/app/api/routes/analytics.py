@@ -196,38 +196,67 @@ def get_tickets_over_time(
 def get_classification_accuracy(
     session: Session = Depends(get_session),
 ) -> ClassificationAccuracy:
-    """Get model accuracy metrics based on agent feedback"""
+    """
+    Get model accuracy metrics based on agent feedback with per-field breakdown
+    
+    For each field (intent, sentiment, priority):
+    - Accepted: feedback action is 'accepted' OR corrected but this field unchanged
+    - Corrected: feedback action is 'corrected' AND this field was changed
+    - Accuracy: accepted / total_feedback
+    """
     try:
-        total_classifications = session.exec(
-            select(func.count(TicketClassification.id))
-        ).one()
+        # Get all feedback records
+        all_feedback = session.exec(select(ClassificationFeedback)).all()
+        total_feedback = len(all_feedback)
         
-        # Count feedback by action
-        accepted = session.exec(
-            select(func.count(ClassificationFeedback.id))
-            .where(ClassificationFeedback.action == "accepted")
-        ).one()
+        if total_feedback == 0:
+            return ClassificationAccuracy(
+                intent_accuracy=0.0,
+                sentiment_accuracy=0.0,
+                priority_accuracy=0.0,
+                overall_accuracy=0.0,
+                intent_accepted=0,
+                intent_corrected=0,
+                sentiment_accepted=0,
+                sentiment_corrected=0,
+                priority_accepted=0,
+                priority_corrected=0,
+                total_feedback=0
+            )
         
-        rejected = session.exec(
-            select(func.count(ClassificationFeedback.id))
-            .where(ClassificationFeedback.action == "rejected")
-        ).one()
+        # Per-field calculations
+        # Intent: accepted if action='accepted' OR (action='corrected' but intent not changed)
+        intent_accepted = sum(1 for f in all_feedback if f.action == "accepted" or (f.action == "corrected" and f.corrected_intent is None))
+        intent_corrected = sum(1 for f in all_feedback if f.action == "corrected" and f.corrected_intent is not None)
         
-        corrected = session.exec(
-            select(func.count(ClassificationFeedback.id))
-            .where(ClassificationFeedback.action == "corrected")
-        ).one()
+        # Sentiment: accepted if action='accepted' OR (action='corrected' but sentiment not changed)
+        sentiment_accepted = sum(1 for f in all_feedback if f.action == "accepted" or (f.action == "corrected" and f.corrected_sentiment is None))
+        sentiment_corrected = sum(1 for f in all_feedback if f.action == "corrected" and f.corrected_sentiment is not None)
         
-        with_feedback = accepted + rejected + corrected
-        accuracy_rate = (accepted / with_feedback * 100) if with_feedback > 0 else 0.0
+        # Priority: accepted if action='accepted' OR (action='corrected' but priority not changed)
+        priority_accepted = sum(1 for f in all_feedback if f.action == "accepted" or (f.action == "corrected" and f.corrected_priority is None))
+        priority_corrected = sum(1 for f in all_feedback if f.action == "corrected" and f.corrected_priority is not None)
+        
+        # Calculate per-field accuracy (0.0 to 1.0)
+        intent_accuracy = intent_accepted / total_feedback if total_feedback > 0 else 0.0
+        sentiment_accuracy = sentiment_accepted / total_feedback if total_feedback > 0 else 0.0
+        priority_accuracy = priority_accepted / total_feedback if total_feedback > 0 else 0.0
+        
+        # Overall accuracy is the average of the three field accuracies
+        overall_accuracy = (intent_accuracy + sentiment_accuracy + priority_accuracy) / 3.0
         
         return ClassificationAccuracy(
-            total_classifications=total_classifications,
-            with_feedback=with_feedback,
-            accepted=accepted,
-            rejected=rejected,
-            corrected=corrected,
-            accuracy_rate=round(accuracy_rate, 2),
+            intent_accuracy=round(intent_accuracy, 4),
+            sentiment_accuracy=round(sentiment_accuracy, 4),
+            priority_accuracy=round(priority_accuracy, 4),
+            overall_accuracy=round(overall_accuracy, 4),
+            intent_accepted=intent_accepted,
+            intent_corrected=intent_corrected,
+            sentiment_accepted=sentiment_accepted,
+            sentiment_corrected=sentiment_corrected,
+            priority_accepted=priority_accepted,
+            priority_corrected=priority_corrected,
+            total_feedback=total_feedback
         )
     except Exception:
         logger.exception("GET_CLASSIFICATION_ACCURACY_FAILED")
