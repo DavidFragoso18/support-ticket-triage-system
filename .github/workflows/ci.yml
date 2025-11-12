@@ -54,6 +54,7 @@ jobs:
         env:
           DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/triage
           APP_ENV: test
+          PYTHONPATH: .
         run: |
           pytest tests/ -v --cov=app --cov-report=xml --cov-report=term
 
