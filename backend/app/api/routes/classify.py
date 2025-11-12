@@ -22,6 +22,6 @@ def classify(body: ClassifyIn) -> ClassifyOut:
             confidence=float(min(intent_conf, sentiment_conf)),
             low_confidence=low_conf
         )
-    except Exception as e:
+    except Exception:
         logger.exception("CLASSIFY_FAILED")
         raise internal_error("CLASSIFY_FAILED", "Classification failed. Please try again.")

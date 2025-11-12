@@ -87,7 +87,10 @@ def get_intent_distribution(
         ]
     except Exception:
         logger.exception("GET_INTENT_DISTRIBUTION_FAILED")
-        raise internal_error("GET_INTENT_DISTRIBUTION_FAILED", "Could not retrieve intent distribution.")
+        raise internal_error(
+            "GET_INTENT_DISTRIBUTION_FAILED",
+            "Could not retrieve intent distribution."
+        )
 
 @router.get("/sentiment-distribution", response_model=list[SentimentDistribution])
 def get_sentiment_distribution(
@@ -115,7 +118,10 @@ def get_sentiment_distribution(
         ]
     except Exception:
         logger.exception("GET_SENTIMENT_DISTRIBUTION_FAILED")
-        raise internal_error("GET_SENTIMENT_DISTRIBUTION_FAILED", "Could not retrieve sentiment distribution.")
+        raise internal_error(
+            "GET_SENTIMENT_DISTRIBUTION_FAILED",
+            "Could not retrieve sentiment distribution."
+        )
 
 @router.get("/priority-distribution", response_model=list[PriorityDistribution])
 def get_priority_distribution(
@@ -143,7 +149,10 @@ def get_priority_distribution(
         ]
     except Exception:
         logger.exception("GET_PRIORITY_DISTRIBUTION_FAILED")
-        raise internal_error("GET_PRIORITY_DISTRIBUTION_FAILED", "Could not retrieve priority distribution.")
+        raise internal_error(
+            "GET_PRIORITY_DISTRIBUTION_FAILED",
+            "Could not retrieve priority distribution."
+        )
 
 @router.get("/tickets-over-time", response_model=list[TimeSeriesData])
 def get_tickets_over_time(
@@ -190,7 +199,10 @@ def get_tickets_over_time(
         ]
     except Exception:
         logger.exception("GET_TICKETS_OVER_TIME_FAILED")
-        raise internal_error("GET_TICKETS_OVER_TIME_FAILED", "Could not retrieve time series data.")
+        raise internal_error(
+            "GET_TICKETS_OVER_TIME_FAILED",
+            "Could not retrieve time series data."
+        )
 
 @router.get("/classification-accuracy", response_model=ClassificationAccuracy)
 def get_classification_accuracy(
@@ -260,7 +272,10 @@ def get_classification_accuracy(
         )
     except Exception:
         logger.exception("GET_CLASSIFICATION_ACCURACY_FAILED")
-        raise internal_error("GET_CLASSIFICATION_ACCURACY_FAILED", "Could not retrieve accuracy metrics.")
+        raise internal_error(
+            "GET_CLASSIFICATION_ACCURACY_FAILED",
+            "Could not retrieve accuracy metrics."
+        )
 
 
 @router.get("/trends")
@@ -315,7 +330,10 @@ def get_trends(
         
     except Exception:
         logger.exception("GET_TRENDS_FAILED")
-        raise internal_error("GET_TRENDS_FAILED", "Could not retrieve trend data.")
+        raise internal_error(
+            "GET_TRENDS_FAILED",
+            "Could not retrieve trend data."
+        )
 
 
 @router.get("/agents/performance")
@@ -402,7 +420,10 @@ def get_agent_performance(
         
     except Exception:
         logger.exception("GET_AGENT_PERFORMANCE_FAILED")
-        raise internal_error("GET_AGENT_PERFORMANCE_FAILED", "Could not retrieve agent performance data.")
+        raise internal_error(
+            "GET_AGENT_PERFORMANCE_FAILED",
+            "Could not retrieve agent performance data."
+        )
 
 
 @router.get("/dashboard")
@@ -436,4 +457,7 @@ def get_dashboard(
         
     except Exception:
         logger.exception("GET_DASHBOARD_FAILED")
-        raise internal_error("GET_DASHBOARD_FAILED", "Could not retrieve dashboard data.")
+        raise internal_error(
+            "GET_DASHBOARD_FAILED",
+            "Could not retrieve dashboard data."
+        )

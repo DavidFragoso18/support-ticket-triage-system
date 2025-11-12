@@ -126,7 +126,7 @@ class ConnectionManager:
                 
     async def broadcast_high_priority_alert(self, ticket_data: dict):
         """Send high-priority ticket alert to all agents"""
-        logger.info(f"🚨 Broadcasting high-priority alert")
+        logger.info("🚨 Broadcasting high-priority alert")
         # Convert non-serializable types to strings
         serializable_data = json.loads(json.dumps(ticket_data, default=str))
         
