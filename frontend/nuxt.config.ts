@@ -14,8 +14,11 @@ export default defineNuxtConfig({
   },
 
   runtimeConfig: {
+    // Private runtime config (server-side only)
+    apiBase: process.env.API_BASE_URL || 'http://backend:8000',
+    // Public runtime config (client-side)
     public: {
-      apiBase: process.env.API_BASE || 'http://localhost:8000', // FastAPI
+      apiBase: process.env.NUXT_PUBLIC_API_BASE_URL || 'http://localhost:8000',
     },
   },
 

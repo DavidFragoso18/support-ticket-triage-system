@@ -1,5 +1,6 @@
 import csv
 from pathlib import Path
+from typing import Optional
 from sqlmodel import Session
 from app.db.base import engine, create_db_and_tables
 from app.db.models.ticket import Ticket
@@ -7,7 +8,7 @@ from uuid import UUID
 
 CSV_PATH = Path(__file__).resolve().parents[3] / "data" / "seeds" / "tickets_seed.csv"
 
-def parse_uuid_or_none(x: str | None):
+def parse_uuid_or_none(x: Optional[str]):
     x = (x or "").strip()
     if not x:
         return None

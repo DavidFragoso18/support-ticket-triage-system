@@ -14,8 +14,14 @@ DB_PASS      := postgres
 DB_PORT      := 5432
 DB_VOLUME    := triage_pg_data
 
-# Use the project's venv Python (Windows path). On macOS/Linux, use $(BACKEND_DIR)/.venv/bin/python
-PYTHON := "backend/.venv/Scripts/python.exe"
+# Use the project's venv Python (detect OS)
+ifeq ($(OS),Windows_NT)
+	PYTHON := backend/.venv/Scripts/python.exe
+	PYTHON_LOCAL := .venv/Scripts/python.exe
+else
+	PYTHON := backend/.venv/bin/python
+	PYTHON_LOCAL := .venv/bin/python
+endif
 
 # Docker Compose settings
 DOCKER_COMPOSE := docker-compose
@@ -106,27 +112,27 @@ test:
 which-python:
 	@echo "Using Python:" && $(PYTHON) -c "import sys,platform; print(sys.executable); print(platform.python_version())"
 
-# --- Seeding (run from backend/ to resolve 'app.*' modules reliably on Windows) ---
+# --- Seeding (run from backend/ to resolve 'app.*' modules reliably) ---
 seed:
 	@echo "Seeding KB articles from data/seeds/kb_articles.csv ..."
-	cd $(BACKEND_DIR) && .\.venv\Scripts\python.exe -m app.scripts.seed_kb
+	cd $(BACKEND_DIR) && $(PYTHON_LOCAL) -m app.scripts.seed_kb
 	@echo "Seeding tickets from data/seeds/tickets ..."
-	cd $(BACKEND_DIR) && .\.venv\Scripts\python.exe -m app.scripts.seed_tickets
+	cd $(BACKEND_DIR) && $(PYTHON_LOCAL) -m app.scripts.seed_tickets
 	@echo "Seeding resolutions from data/seeds/resolutions ..."
-	cd $(BACKEND_DIR) && .\.venv\Scripts\python.exe -m app.scripts.seed_resolutions
+	cd $(BACKEND_DIR) && $(PYTHON_LOCAL) -m app.scripts.seed_resolutions
 	@echo "✅ All seeds completed."
 
 seed-kb:
 	@echo "Seeding KB articles from data/seeds/kb_articles.csv ..."
-	cd $(BACKEND_DIR) && .\.venv\Scripts\python.exe -m app.scripts.seed_kb
+	cd $(BACKEND_DIR) && $(PYTHON_LOCAL) -m app.scripts.seed_kb
 
 seed-resolutions:
 	@echo "Seeding resolutions from data/seeds/resolutions.csv ..."
-	cd $(BACKEND_DIR) && .\.venv\Scripts\python.exe -m app.scripts.seed_resolutions
+	cd $(BACKEND_DIR) && $(PYTHON_LOCAL) -m app.scripts.seed_resolutions
 
 seed-tickets:
 	@echo "Seeding tickets from data/seeds/tickets ..."
-	cd $(BACKEND_DIR) && .\.venv\Scripts\python.exe -m app.scripts.seed_tickets
+	cd $(BACKEND_DIR) && $(PYTHON_LOCAL) -m app.scripts.seed_tickets
 
 # --- Frontend targets ---
 install-frontend:

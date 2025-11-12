@@ -14,10 +14,10 @@ def cosine(a: np.ndarray, b: np.ndarray) -> float:
         return 0.0
     return float(np.dot(a, b) / denom)
 
-def suggest_for_text(session: Session, text: str, top_k: int = 5) -> List[Tuple[Union[KBArticle, Tuple[Ticket, Resolution]], float]]:
+def suggest_for_text(session: Session, text: str, top_k: int = 5) -> List[Tuple[Union[KBArticle, Resolution], float]]:
     """
-    Find relevant KB articles and past resolutions for a ticket.
-    Returns a combined list of suggestions sorted by relevance.
+    Find relevant KB articles and resolution templates for a ticket.
+    Returns a combined list of suggestions sorted by relevance (score is cosine similarity).
     """
     # Encode ticket text
     q_vec = emb.encode_text(text)
@@ -32,28 +32,15 @@ def suggest_for_text(session: Session, text: str, top_k: int = 5) -> List[Tuple[
         score = cosine(q_vec, vec)
         scored_kb.append((art, score))
 
-    # For Phase 2: Also check resolved tickets (simplified - no embeddings yet)
-    # We'll match on keywords for now, full semantic search in Phase 4
-    resolutions = session.exec(
-        select(Resolution, Ticket)
-        .join(Ticket, Resolution.ticket_id == Ticket.id)
-        .limit(20)  # Limit to recent resolutions
-    ).all()
-    
+    # Load all resolution templates
+    resolutions = session.exec(select(Resolution)).all()
     scored_resolutions = []
-    for resolution, ticket in resolutions:
-        # Simple keyword matching score (0-1)
-        text_lower = text.lower()
-        ticket_text = f"{ticket.subject} {ticket.body}".lower()
-        
-        # Count common words as a simple relevance metric
-        text_words = set(text_lower.split())
-        ticket_words = set(ticket_text.split())
-        if len(text_words) > 0:
-            common = len(text_words & ticket_words)
-            score = min(common / len(text_words), 1.0) * 0.7  # Cap at 0.7 for keyword matches
-            if score > 0.1:  # Only include if somewhat relevant
-                scored_resolutions.append(((ticket, resolution), score))
+    for res in resolutions:
+        if res.embedding is None:
+            continue
+        vec = from_bytes(res.embedding)
+        score = cosine(q_vec, vec)
+        scored_resolutions.append((res, score))
 
     # Combine and sort by score
     all_suggestions = scored_kb + scored_resolutions

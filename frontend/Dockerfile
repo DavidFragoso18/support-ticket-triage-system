@@ -28,9 +28,9 @@ COPY --from=builder /app/package*.json ./
 # Install only production dependencies
 RUN npm ci --omit=dev
 
-# Create non-root user
-RUN addgroup -g 1000 appuser && \
-    adduser -D -u 1000 -G appuser appuser && \
+# Create non-root user (use existing group if 1000 is taken)
+RUN addgroup -g 1001 appuser || addgroup appuser && \
+    adduser -D -u 1001 -G appuser appuser && \
     chown -R appuser:appuser /app
 
 # Switch to non-root user

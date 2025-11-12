@@ -39,9 +39,10 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 # Copy application code
 COPY . .
 
-# Create non-root user for security
+# Create non-root user for security and cache directories
 RUN useradd -m -u 1000 appuser && \
-    chown -R appuser:appuser /app
+    mkdir -p /home/appuser/.cache/huggingface && \
+    chown -R appuser:appuser /app /home/appuser/.cache
 
 # Switch to non-root user
 USER appuser
@@ -49,7 +50,9 @@ USER appuser
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    PATH="/home/appuser/.local/bin:${PATH}"
+    PATH="/home/appuser/.local/bin:${PATH}" \
+    TRANSFORMERS_CACHE=/home/appuser/.cache/huggingface \
+    HF_HOME=/home/appuser/.cache/huggingface
 
 # Expose port
 EXPOSE 8000

@@ -33,25 +33,24 @@ def get_suggestions(ticket_id: UUID, session: Session = Depends(get_session)) ->
         for item, score in suggestions:
             if isinstance(item, KBArticle):
                 # KB Article suggestion
-                preview = item.answer[:200] + ("..." if len(item.answer) > 200 else "")
+                preview = item.body[:200] + ("..." if len(item.body) > 200 else "")
                 out.append(SuggestionOut(
                     id=item.id,
                     type="kb_article",
-                    title=item.question,
+                    title=item.title,
                     preview=preview,
                     score=round(score, 4)
                 ))
-            else:
-                # Past resolution suggestion (ticket, resolution tuple)
-                ticket, resolution = item
-                preview = resolution.summary[:200] + ("..." if len(resolution.summary) > 200 else "")
+            elif isinstance(item, Resolution):
+                # Resolution template suggestion
+                preview = item.body[:200] + ("..." if len(item.body) > 200 else "")
                 out.append(SuggestionOut(
-                    id=resolution.id,
-                    type="past_resolution",
-                    title=ticket.subject,
+                    id=item.id,
+                    type="resolution_template",
+                    title=item.title,
                     preview=preview,
                     score=round(score, 4),
-                    ticket_id=ticket.id
+                    ticket_id=None  # Resolution templates aren't linked to specific tickets
                 ))
         
         return out
