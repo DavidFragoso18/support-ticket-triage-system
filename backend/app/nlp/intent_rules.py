@@ -9,10 +9,13 @@ def normalize(text: str) -> str:
     t = re.sub(r"\s+", " ", t).strip()
     return t
 
+
 # Domain patterns → intent
 _INTENT_PATTERNS: dict[str, list[re.Pattern]] = {
     "billing": [
-        re.compile(r"\b(billing|invoice|payment|charged?|charge|declined|card|subscription|membership|cost|price|fee)\b"),
+        re.compile(
+            r"\b(billing|invoice|payment|charged?|charge|declined|card|subscription|membership|cost|price|fee)\b"
+        ),
         re.compile(r"\b(double[-\s]?charge|charged\s+twice|duplicate\s+charge)\b"),
         re.compile(r"\b(credit card|debit|paypal|payment method|visa|mastercard|amex)\b"),
         re.compile(r"\b(monthly|annual|plan|tier|upgrade|discount|student)\b"),
@@ -41,16 +44,14 @@ _INTENT_PATTERNS: dict[str, list[re.Pattern]] = {
         ),
         re.compile(r"\b(slow|laggy|freezing|loading|performance)\b"),
         re.compile(
-            r"\b(data\s+(lost|missing|disappeared)|workout\s+tracker"
-            r"|not\s+recording)\b"
+            r"\b(data\s+(lost|missing|disappeared)|workout\s+tracker" r"|not\s+recording)\b"
         ),
         re.compile(
             r"\b(app\s+crash|wont\s+(play|load|sync)|will not\s+(play|load|sync)"
             r"|notifications?\s+not\s+working)\b"
         ),
         re.compile(
-            r"\b(barcode\s+scanner|video\s+wont\s+play"
-            r"|video\s+will not\s+play|cache|offline)\b"
+            r"\b(barcode\s+scanner|video\s+wont\s+play" r"|video\s+will not\s+play|cache|offline)\b"
         ),
     ],
     "usage_howto": [
@@ -66,6 +67,7 @@ _INTENT_PATTERNS: dict[str, list[re.Pattern]] = {
         re.compile(r"\b(webhooks?|integration|dark ?mode|idea)\b"),
     ],
 }
+
 
 def rule_intent(text: str) -> Optional[str]:
     t = normalize(text)

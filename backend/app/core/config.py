@@ -11,7 +11,7 @@ class Settings(BaseSettings):
 
     database_url: str = "postgresql+psycopg://postgres:postgres@localhost:5432/triage"
     redis_url: str = "redis://localhost:6379"
-    
+
     @field_validator("allowed_origins", mode="before")
     @classmethod
     def parse_allowed_origins(cls, v):
@@ -29,5 +29,6 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
         case_sensitive = False
+
 
 settings = Settings()

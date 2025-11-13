@@ -11,15 +11,14 @@ from app.services.serialize import from_bytes
 
 def cosine(a: np.ndarray, b: np.ndarray) -> float:
     # embeddings are normalized, but keep generic
-    denom = (np.linalg.norm(a) * np.linalg.norm(b))
+    denom = np.linalg.norm(a) * np.linalg.norm(b)
     if denom == 0:
         return 0.0
     return float(np.dot(a, b) / denom)
 
+
 def suggest_for_text(
-    session: Session,
-    text: str,
-    top_k: int = 5
+    session: Session, text: str, top_k: int = 5
 ) -> List[Tuple[Union[KBArticle, Resolution], float]]:
     """
     Find relevant KB articles and resolution templates for a ticket.
@@ -51,5 +50,5 @@ def suggest_for_text(
     # Combine and sort by score
     all_suggestions = scored_kb + scored_resolutions
     all_suggestions.sort(key=lambda x: x[1], reverse=True)
-    
+
     return all_suggestions[:top_k]

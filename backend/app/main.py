@@ -1,4 +1,3 @@
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -29,6 +28,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.on_event("startup")
 async def on_startup():
     create_db_and_tables()
@@ -37,14 +37,17 @@ async def on_startup():
     # Initialize Redis for WebSocket pub/sub
     await manager.connect_redis()
 
+
 @app.on_event("shutdown")
 async def on_shutdown():
     # Clean up Redis connection
     await manager.disconnect_redis()
 
+
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
 
 app.include_router(classify.router)
 app.include_router(tickets.router)

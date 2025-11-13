@@ -10,5 +10,6 @@ def main():
         conn.commit()
         print("✅ pgvector extension enabled")
 
+
 if __name__ == "__main__":
     main()

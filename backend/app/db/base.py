@@ -10,16 +10,18 @@ def _import_models():
     import app.db.models.resolutions  # noqa: F401
     import app.db.models.ticket  # noqa: F401
 
+
 engine = create_engine(
     settings.database_url,
     echo=False,
     connect_args={"connect_timeout": 5},  # optional, helps fail fast
 )
 
+
 def create_db_and_tables() -> None:
     _import_models()
     SQLModel.metadata.create_all(engine)
-    
+
 
 def get_session():
     with Session(engine) as session:

@@ -1,6 +1,7 @@
 """
 Pytest configuration and fixtures for all tests.
 """
+
 import os
 import sys
 from pathlib import Path
@@ -11,7 +12,7 @@ if str(backend_dir) not in sys.path:
     sys.path.insert(0, str(backend_dir))
 
 # Also set PYTHONPATH environment variable
-os.environ['PYTHONPATH'] = str(backend_dir) + os.pathsep + os.environ.get('PYTHONPATH', '')
+os.environ["PYTHONPATH"] = str(backend_dir) + os.pathsep + os.environ.get("PYTHONPATH", "")
 
 # Imports must come after path manipulation above
 import pytest  # noqa: E402
@@ -39,6 +40,7 @@ def session_fixture():
 @pytest.fixture(name="client")
 def client_fixture(session: Session):
     """Create a test client with database session override"""
+
     def get_session_override():
         return session
 

@@ -1,4 +1,5 @@
 """Tests for WebSocket real-time updates"""
+
 import time
 
 import pytest
@@ -31,10 +32,10 @@ def test_websocket_ping_pong():
     with client.websocket_connect("/ws/tickets") as websocket:
         # Skip connection message
         websocket.receive_json()
-        
+
         # Send ping
         websocket.send_json({"type": "ping"})
-        
+
         # Should receive pong
         response = websocket.receive_json()
         assert response["type"] == "pong"
@@ -57,17 +58,14 @@ def test_ticket_claim_endpoint():
         "subject": "Test claim ticket",
         "body": "Testing ticket claim functionality",
         "channel": "web",
-        "customer_id": "cust-123"
+        "customer_id": "cust-123",
     }
     create_response = client.post("/tickets", json=ticket_data)
     assert create_response.status_code == 201
     ticket_id = create_response.json()["id"]
-    
+
     # Claim the ticket
-    claim_response = client.post(
-        f"/tickets/{ticket_id}/claim",
-        params={"agent_id": "agent-456"}
-    )
+    claim_response = client.post(f"/tickets/{ticket_id}/claim", params={"agent_id": "agent-456"})
     assert claim_response.status_code == 200
     data = claim_response.json()
     assert data["success"] is True
@@ -82,14 +80,14 @@ def test_ticket_release_endpoint():
         "subject": "Test release ticket",
         "body": "Testing ticket release functionality",
         "channel": "email",
-        "customer_id": "cust-789"
+        "customer_id": "cust-789",
     }
     create_response = client.post("/tickets", json=ticket_data)
     ticket_id = create_response.json()["id"]
-    
+
     # Claim it first
     client.post(f"/tickets/{ticket_id}/claim", params={"agent_id": "agent-999"})
-    
+
     # Release the ticket
     release_response = client.post(f"/tickets/{ticket_id}/release")
     assert release_response.status_code == 200
@@ -106,19 +104,16 @@ def test_ticket_claim_conflict():
         "subject": "Test conflict",
         "body": "Testing claim conflict",
         "channel": "phone",
-        "customer_id": "cust-conflict"
+        "customer_id": "cust-conflict",
     }
     create_response = client.post("/tickets", json=ticket_data)
     ticket_id = create_response.json()["id"]
-    
+
     # Claim by first agent
     client.post(f"/tickets/{ticket_id}/claim", params={"agent_id": "agent-1"})
-    
+
     # Try to claim by second agent
-    conflict_response = client.post(
-        f"/tickets/{ticket_id}/claim",
-        params={"agent_id": "agent-2"}
-    )
+    conflict_response = client.post(f"/tickets/{ticket_id}/claim", params={"agent_id": "agent-2"})
     assert conflict_response.status_code == 409
 
 
@@ -127,24 +122,25 @@ def test_websocket_receives_new_ticket_broadcast():
     with client.websocket_connect("/ws/tickets") as websocket:
         # Skip connection message
         websocket.receive_json()
-        
+
         # Create a new ticket (this should trigger a broadcast)
         ticket_data = {
             "subject": "Broadcast test ticket",
             "body": "This should be broadcast to all clients",
             "channel": "chat",
-            "customer_id": "cust-broadcast"
+            "customer_id": "cust-broadcast",
         }
-        
+
         # Create ticket in separate request
         import threading
+
         def create_ticket():
             time.sleep(0.5)  # Small delay to ensure websocket is ready
             client.post("/tickets", json=ticket_data)
-        
+
         thread = threading.Thread(target=create_ticket)
         thread.start()
-        
+
         # Wait for broadcast message (with timeout)
         websocket.settimeout(2.0)
         try:

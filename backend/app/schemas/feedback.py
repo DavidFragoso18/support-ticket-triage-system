@@ -14,6 +14,7 @@ class FeedbackCreate(BaseModel):
     agent_id: Optional[str] = None
     notes: Optional[str] = None
 
+
 class FeedbackOut(BaseModel):
     id: UUID
     classification_id: UUID

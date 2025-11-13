@@ -11,6 +11,7 @@ from app.nlp.embeddings import emb
 
 CSV_PATH = Path(__file__).resolve().parents[3] / "data" / "seeds" / "resolutions.csv"
 
+
 def parse_uuid_or_none(x: Optional[str]):
     x = (x or "").strip()
     if not x:
@@ -19,6 +20,7 @@ def parse_uuid_or_none(x: Optional[str]):
         return UUID(x)
     except ValueError:
         return None  # ignore bad values
+
 
 def main():
     print(f"[seed] CSV: {CSV_PATH} (exists={CSV_PATH.exists()})")
@@ -31,24 +33,20 @@ def main():
             intent = (row.get("intent") or "general_inquiry").strip()
             title = (row.get("title") or row.get("summary") or "").strip()
             body = (row.get("body") or row.get("details") or "").strip()
-            
+
             if not title or not body:
                 print(f"[seed] Skipping row with missing title/body: {row}")
                 continue
-            
+
             # Generate embedding
             text_for_embedding = f"{intent} {title} {body}"
             embedding_list = emb.encode_to_list(text_for_embedding)
-            
-            session.add(Resolution(
-                intent=intent,
-                title=title,
-                body=body,
-                embedding=embedding_list
-            ))
+
+            session.add(Resolution(intent=intent, title=title, body=body, embedding=embedding_list))
             count += 1
         session.commit()
     print(f"[seed] Resolutions seeded: {count}")
+
 
 if __name__ == "__main__":
     main()

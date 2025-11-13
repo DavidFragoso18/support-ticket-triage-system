@@ -7,6 +7,7 @@ class ClassifyIn(BaseModel):
     text: str
     language: Optional[str] = None
 
+
 class ClassifyOut(BaseModel):
     intent: str
     sentiment: str

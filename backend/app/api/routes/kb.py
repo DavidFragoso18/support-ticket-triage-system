@@ -7,11 +7,13 @@ from app.db.models.kb import KBArticle
 
 router = APIRouter(prefix="/kb", tags=["kb"])
 
+
 class KBOut(BaseModel):
     id: str
     title: str
     tags: str | None = None
     created_at: str
+
 
 @router.get("", response_model=list[KBOut])
 def list_kb(session: Session = Depends(get_session)) -> list[KBOut]:

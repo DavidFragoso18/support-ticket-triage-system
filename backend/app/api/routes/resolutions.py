@@ -13,6 +13,7 @@ from app.db.models.ticket_resolution import TicketResolution
 
 router = APIRouter(prefix="/resolutions", tags=["resolutions"])
 
+
 class TicketResolutionOut(BaseModel):
     id: UUID
     ticket_id: UUID
@@ -20,16 +21,17 @@ class TicketResolutionOut(BaseModel):
     details: str
     created_at: str
 
+
 class ApplySuggestionRequest(BaseModel):
     ticket_id: UUID
     suggestion_id: UUID
     suggestion_type: str  # "kb_article" or "resolution_template"
     agent_id: Optional[str] = None
 
+
 @router.get("", response_model=list[TicketResolutionOut])
 def list_ticket_resolutions(
-    ticket_id: Optional[UUID] = None,
-    session: Session = Depends(get_session)
+    ticket_id: Optional[UUID] = None, session: Session = Depends(get_session)
 ):
     """
     List actual resolutions applied to tickets. Optionally filter by ticket_id.
@@ -49,11 +51,9 @@ def list_ticket_resolutions(
         for r in rows
     ]
 
+
 @router.post("/apply", response_model=TicketResolutionOut, status_code=201)
-def apply_suggestion(
-    req: ApplySuggestionRequest,
-    session: Session = Depends(get_session)
-):
+def apply_suggestion(req: ApplySuggestionRequest, session: Session = Depends(get_session)):
     """
     Apply a suggestion (KB article or resolution template) as a resolution for a ticket.
     """
@@ -74,20 +74,20 @@ def apply_suggestion(
         template_id = template.id
     else:
         raise HTTPException(status_code=400, detail="Invalid suggestion_type")
-    
+
     # Create the ticket resolution
     ticket_resolution = TicketResolution(
         ticket_id=req.ticket_id,
         summary=summary,
         details=details,
         template_id=template_id,
-        agent_id=req.agent_id
+        agent_id=req.agent_id,
     )
-    
+
     session.add(ticket_resolution)
     session.commit()
     session.refresh(ticket_resolution)
-    
+
     return TicketResolutionOut(
         id=ticket_resolution.id,
         ticket_id=ticket_resolution.ticket_id,

@@ -3,6 +3,7 @@ Semantic search routes using vector embeddings.
 
 Provides similarity search across KB articles, resolutions, and tickets.
 """
+
 from typing import List
 
 from fastapi import APIRouter, Depends, Query
@@ -18,6 +19,7 @@ router = APIRouter(prefix="/search", tags=["search"])
 
 class SearchResult(BaseModel):
     """Similarity search result."""
+
     id: str
     title: str
     preview: str
@@ -33,70 +35,76 @@ def search_similar(
 ) -> List[SearchResult]:
     """
     Semantic search for similar KB articles and resolutions.
-    
+
     Uses pgvector cosine similarity with sentence-transformers embeddings.
     """
     try:
         # Generate query embedding
         query_embedding = emb.encode_to_list(query)
-        
+
         results: List[SearchResult] = []
-        
+
         # Search KB articles
-        kb_stmt = text("""
+        kb_stmt = text(
+            """
             SELECT id, title, body, (embedding <=> CAST(:embedding AS vector)) AS distance
             FROM kb_articles
             WHERE embedding IS NOT NULL
             ORDER BY embedding <=> CAST(:embedding AS vector)
             LIMIT :limit
-        """)
-        
+        """
+        )
+
         kb_results = session.execute(
-            kb_stmt,
-            {"embedding": str(query_embedding), "limit": limit}
+            kb_stmt, {"embedding": str(query_embedding), "limit": limit}
         ).fetchall()
-        
+
         for row in kb_results:
             # Convert distance to similarity (1 - cosine distance)
             similarity = 1.0 - row[3]
             if similarity > 0.5:  # Filter low similarity results
-                results.append(SearchResult(
-                    id=str(row[0]),
-                    title=row[1],
-                    preview=row[2][:150] + "..." if len(row[2]) > 150 else row[2],
-                    similarity=round(similarity, 4),
-                    type="kb"
-                ))
-        
+                results.append(
+                    SearchResult(
+                        id=str(row[0]),
+                        title=row[1],
+                        preview=row[2][:150] + "..." if len(row[2]) > 150 else row[2],
+                        similarity=round(similarity, 4),
+                        type="kb",
+                    )
+                )
+
         # Search Resolutions
-        res_stmt = text("""
+        res_stmt = text(
+            """
             SELECT id, title, body, (embedding <=> CAST(:embedding AS vector)) AS distance
             FROM resolutions
             WHERE embedding IS NOT NULL
             ORDER BY embedding <=> CAST(:embedding AS vector)
             LIMIT :limit
-        """)
-        
+        """
+        )
+
         res_results = session.execute(
-            res_stmt,
-            {"embedding": str(query_embedding), "limit": limit}
+            res_stmt, {"embedding": str(query_embedding), "limit": limit}
         ).fetchall()
-        
+
         for row in res_results:
             similarity = 1.0 - row[3]
             if similarity > 0.5:
-                results.append(SearchResult(
-                    id=str(row[0]),
-                    title=row[1],
-                    preview=row[2][:150] + "..." if len(row[2]) > 150 else row[2],
-                    similarity=round(similarity, 4),
-                    type="resolution"
-                ))
-        
+                results.append(
+                    SearchResult(
+                        id=str(row[0]),
+                        title=row[1],
+                        preview=row[2][:150] + "..." if len(row[2]) > 150 else row[2],
+                        similarity=round(similarity, 4),
+                        type="resolution",
+                    )
+                )
+
         # Sort all results by similarity and limit
         results.sort(key=lambda x: x.similarity, reverse=True)
         return results[:limit]
-        
+
     except Exception:
         logger.exception("SEARCH_SIMILAR_FAILED")
         raise internal_error("SEARCH_SIMILAR_FAILED", "Could not perform similarity search.")
@@ -112,7 +120,7 @@ async def search_tickets(
 ):
     """
     Advanced semantic search for tickets.
-    
+
     Modes:
     - semantic: Vector similarity search only (best for conceptual queries)
     - keyword: Full-text search only (best for exact terms)
@@ -120,15 +128,16 @@ async def search_tickets(
     """
     try:
         from app.schemas.ticket import ClassificationOut, TicketOut
-        
+
         results = []
-        
+
         if mode == "semantic":
             # Pure vector similarity search
             query_embedding = emb.encode_to_list(q)
             embedding_str = str(query_embedding)
-            
-            query = text("""
+
+            query = text(
+                """
                 SELECT 
                     t.id, t.subject, t.body, t.channel, t.customer_id, t.language,
                     t.created_at, t.updated_at, t.status, t.assigned_agent_id,
@@ -140,42 +149,47 @@ async def search_tickets(
                 WHERE t.embedding IS NOT NULL
                 ORDER BY t.embedding <=> CAST(:embedding AS vector)
                 LIMIT :limit
-            """)
-            
-            result = session.execute(
-                query,
-                {"embedding": embedding_str, "limit": limit}
+            """
             )
+
+            result = session.execute(query, {"embedding": embedding_str, "limit": limit})
             rows = result.fetchall()
-            
+
             for row in rows:
                 if row.similarity >= threshold:
-                    results.append({
-                        "ticket": TicketOut(
-                            id=row.id,
-                            subject=row.subject,
-                            body=row.body,
-                            channel=row.channel,
-                            customer_id=row.customer_id,
-                            language=row.language,
-                            created_at=row.created_at,
-                            updated_at=row.updated_at,
-                            classification=ClassificationOut(
-                                id=row.classification_id,
-                                intent=row.intent,
-                                sentiment=row.sentiment,
-                                priority=row.priority,
-                                confidence=row.confidence,
-                                low_confidence=row.low_confidence
-                            ) if row.classification_id else None
-                        ),
-                        "score": float(row.similarity),
-                        "match_type": "semantic"
-                    })
-                    
+                    results.append(
+                        {
+                            "ticket": TicketOut(
+                                id=row.id,
+                                subject=row.subject,
+                                body=row.body,
+                                channel=row.channel,
+                                customer_id=row.customer_id,
+                                language=row.language,
+                                created_at=row.created_at,
+                                updated_at=row.updated_at,
+                                classification=(
+                                    ClassificationOut(
+                                        id=row.classification_id,
+                                        intent=row.intent,
+                                        sentiment=row.sentiment,
+                                        priority=row.priority,
+                                        confidence=row.confidence,
+                                        low_confidence=row.low_confidence,
+                                    )
+                                    if row.classification_id
+                                    else None
+                                ),
+                            ),
+                            "score": float(row.similarity),
+                            "match_type": "semantic",
+                        }
+                    )
+
         elif mode == "keyword":
             # Full-text search using PostgreSQL tsvector
-            query = text("""
+            query = text(
+                """
                 SELECT 
                     t.id, t.subject, t.body, t.channel, t.customer_id, t.language,
                     t.created_at, t.updated_at, t.status, t.assigned_agent_id,
@@ -187,48 +201,53 @@ async def search_tickets(
                 WHERE t.search_vector @@ to_tsquery('english', :query)
                 ORDER BY rank DESC
                 LIMIT :limit
-            """)
-            
+            """
+            )
+
             # Convert query to tsquery format (replace spaces with &)
             tsquery = " & ".join(q.split())
-            
-            result = session.execute(
-                query,
-                {"query": tsquery, "limit": limit}
-            )
+
+            result = session.execute(query, {"query": tsquery, "limit": limit})
             rows = result.fetchall()
-            
+
             for row in rows:
-                results.append({
-                    "ticket": TicketOut(
-                        id=row.id,
-                        subject=row.subject,
-                        body=row.body,
-                        channel=row.channel,
-                        customer_id=row.customer_id,
-                        language=row.language,
-                        created_at=row.created_at,
-                        updated_at=row.updated_at,
-                        classification=ClassificationOut(
-                            id=row.classification_id,
-                            intent=row.intent,
-                            sentiment=row.sentiment,
-                            priority=row.priority,
-                            confidence=row.confidence,
-                            low_confidence=row.low_confidence
-                        ) if row.classification_id else None
-                    ),
-                    "score": float(row.rank),
-                    "match_type": "keyword"
-                })
-                
+                results.append(
+                    {
+                        "ticket": TicketOut(
+                            id=row.id,
+                            subject=row.subject,
+                            body=row.body,
+                            channel=row.channel,
+                            customer_id=row.customer_id,
+                            language=row.language,
+                            created_at=row.created_at,
+                            updated_at=row.updated_at,
+                            classification=(
+                                ClassificationOut(
+                                    id=row.classification_id,
+                                    intent=row.intent,
+                                    sentiment=row.sentiment,
+                                    priority=row.priority,
+                                    confidence=row.confidence,
+                                    low_confidence=row.low_confidence,
+                                )
+                                if row.classification_id
+                                else None
+                            ),
+                        ),
+                        "score": float(row.rank),
+                        "match_type": "keyword",
+                    }
+                )
+
         else:  # hybrid mode
             # Combine both approaches with weighted scoring
             query_embedding = emb.encode_to_list(q)
             embedding_str = str(query_embedding)
             tsquery = " & ".join(q.split())
-            
-            query = text("""
+
+            query = text(
+                """
                 SELECT 
                     t.id, t.subject, t.body, t.channel, t.customer_id, t.language,
                     t.created_at, t.updated_at, t.status, t.assigned_agent_id,
@@ -247,48 +266,49 @@ async def search_tickets(
                 WHERE t.embedding IS NOT NULL
                 ORDER BY hybrid_score DESC
                 LIMIT :limit
-            """)
-            
+            """
+            )
+
             result = session.execute(
-                query,
-                {"embedding": embedding_str, "query": tsquery, "limit": limit}
+                query, {"embedding": embedding_str, "query": tsquery, "limit": limit}
             )
             rows = result.fetchall()
-            
+
             for row in rows:
                 if row.hybrid_score >= threshold:
-                    results.append({
-                        "ticket": TicketOut(
-                            id=row.id,
-                            subject=row.subject,
-                            body=row.body,
-                            channel=row.channel,
-                            customer_id=row.customer_id,
-                            language=row.language,
-                            created_at=row.created_at,
-                            updated_at=row.updated_at,
-                            classification=ClassificationOut(
-                                id=row.classification_id,
-                                intent=row.intent,
-                                sentiment=row.sentiment,
-                                priority=row.priority,
-                                confidence=row.confidence,
-                                low_confidence=row.low_confidence
-                            ) if row.classification_id else None
-                        ),
-                        "score": float(row.hybrid_score),
-                        "semantic_score": float(row.semantic_score),
-                        "keyword_score": float(row.keyword_score),
-                        "match_type": "hybrid"
-                    })
-        
-        return {
-            "query": q,
-            "mode": mode,
-            "results": results,
-            "count": len(results)
-        }
-        
+                    results.append(
+                        {
+                            "ticket": TicketOut(
+                                id=row.id,
+                                subject=row.subject,
+                                body=row.body,
+                                channel=row.channel,
+                                customer_id=row.customer_id,
+                                language=row.language,
+                                created_at=row.created_at,
+                                updated_at=row.updated_at,
+                                classification=(
+                                    ClassificationOut(
+                                        id=row.classification_id,
+                                        intent=row.intent,
+                                        sentiment=row.sentiment,
+                                        priority=row.priority,
+                                        confidence=row.confidence,
+                                        low_confidence=row.low_confidence,
+                                    )
+                                    if row.classification_id
+                                    else None
+                                ),
+                            ),
+                            "score": float(row.hybrid_score),
+                            "semantic_score": float(row.semantic_score),
+                            "keyword_score": float(row.keyword_score),
+                            "match_type": "hybrid",
+                        }
+                    )
+
+        return {"query": q, "mode": mode, "results": results, "count": len(results)}
+
     except Exception:
         logger.exception("TICKET_SEARCH_FAILED")
         raise internal_error("TICKET_SEARCH_FAILED", "Could not perform ticket search.")

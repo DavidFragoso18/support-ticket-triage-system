@@ -14,6 +14,7 @@ from app.services.suggestions import suggest_for_text
 
 router = APIRouter(prefix="/suggestions", tags=["suggestions"])
 
+
 class SuggestionOut(BaseModel):
     id: UUID
     type: str  # "kb_article" or "past_resolution"
@@ -22,42 +23,46 @@ class SuggestionOut(BaseModel):
     score: float
     ticket_id: Optional[UUID] = None  # For past resolutions
 
+
 @router.get("/{ticket_id}", response_model=list[SuggestionOut])
 def get_suggestions(
-    ticket_id: UUID,
-    session: Session = Depends(get_session)
+    ticket_id: UUID, session: Session = Depends(get_session)
 ) -> list[SuggestionOut]:
     try:
         t = session.get(Ticket, ticket_id)
         if not t:
             raise not_found("TICKET_NOT_FOUND", "Ticket not found.")
-        
+
         suggestions = suggest_for_text(session, t.body, top_k=5)
         out = []
-        
+
         for item, score in suggestions:
             if isinstance(item, KBArticle):
                 # KB Article suggestion
                 preview = item.body[:200] + ("..." if len(item.body) > 200 else "")
-                out.append(SuggestionOut(
-                    id=item.id,
-                    type="kb_article",
-                    title=item.title,
-                    preview=preview,
-                    score=round(score, 4)
-                ))
+                out.append(
+                    SuggestionOut(
+                        id=item.id,
+                        type="kb_article",
+                        title=item.title,
+                        preview=preview,
+                        score=round(score, 4),
+                    )
+                )
             elif isinstance(item, Resolution):
                 # Resolution template suggestion
                 preview = item.body[:200] + ("..." if len(item.body) > 200 else "")
-                out.append(SuggestionOut(
-                    id=item.id,
-                    type="resolution_template",
-                    title=item.title,
-                    preview=preview,
-                    score=round(score, 4),
-                    ticket_id=None  # Resolution templates aren't linked to specific tickets
-                ))
-        
+                out.append(
+                    SuggestionOut(
+                        id=item.id,
+                        type="resolution_template",
+                        title=item.title,
+                        preview=preview,
+                        score=round(score, 4),
+                        ticket_id=None,  # Resolution templates aren't linked to specific tickets
+                    )
+                )
+
         return out
     except Exception:
         logger.exception("GET_SUGGESTIONS_FAILED")

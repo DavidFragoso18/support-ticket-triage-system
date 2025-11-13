@@ -3,15 +3,28 @@ from typing import Literal, Optional
 Priority = Literal["P1", "P2", "P3"]
 
 _P1_PHRASES = {
-    "double charge", "charged twice", "duplicate charge", "fraud", "unauthorized charge",
-    "down", "outage", "service down", "status page",
-    "cannot login", "can't login", "locked out",
-    "data leak", "breach", "security incident",
+    "double charge",
+    "charged twice",
+    "duplicate charge",
+    "fraud",
+    "unauthorized charge",
+    "down",
+    "outage",
+    "service down",
+    "status page",
+    "cannot login",
+    "can't login",
+    "locked out",
+    "data leak",
+    "breach",
+    "security incident",
 }
+
 
 def _contains(text: str, phrases: set[str]) -> bool:
     t = text.lower()
     return any(ph in t for ph in phrases)
+
 
 def choose_priority(intent: Optional[str], sentiment: Optional[str], text: str) -> Priority:
     t = text.lower()

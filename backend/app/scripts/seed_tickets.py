@@ -10,6 +10,7 @@ from app.db.models.ticket import Ticket
 
 CSV_PATH = Path(__file__).resolve().parents[3] / "data" / "seeds" / "tickets_seed.csv"
 
+
 def parse_uuid_or_none(x: Optional[str]):
     x = (x or "").strip()
     if not x:
@@ -18,6 +19,7 @@ def parse_uuid_or_none(x: Optional[str]):
         return UUID(x)
     except ValueError:
         return None  # ignore bad values
+
 
 def main():
     print(f"[seed] CSV: {CSV_PATH} (exists={CSV_PATH.exists()})")
@@ -33,22 +35,25 @@ def main():
             channel = (row.get("channel") or "").strip()
             customer_id = (row.get("customer_id") or "").strip()
             language = (row.get("language") or "").strip()
-            
+
             if not subject or not body:
                 print(f"[seed] Skipping row with missing subject/body: {row}")
                 continue
-                
-            session.add(Ticket(
-                id=id,
-                subject=subject,
-                body=body,
-                channel=channel,
-                customer_id=customer_id,
-                language=language
-            ))
+
+            session.add(
+                Ticket(
+                    id=id,
+                    subject=subject,
+                    body=body,
+                    channel=channel,
+                    customer_id=customer_id,
+                    language=language,
+                )
+            )
             count += 1
         session.commit()
     print(f"[seed] Tickets seeded: {count}")
+
 
 if __name__ == "__main__":
     main()

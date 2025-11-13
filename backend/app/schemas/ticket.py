@@ -13,12 +13,14 @@ class ClassificationOut(BaseModel):
     confidence: float
     low_confidence: bool
 
+
 class TicketCreate(BaseModel):
     subject: str = Field(min_length=5, max_length=200)
     body: str
     channel: str = Field(default="web")
     customer_id: Optional[str] = None
     language: Optional[str] = None
+
 
 class TicketOut(BaseModel):
     id: UUID
@@ -34,6 +36,7 @@ class TicketOut(BaseModel):
     intent: Optional[str] = None
     sentiment: Optional[str] = None
     priority: Optional[str] = None
+
 
 class TicketListOut(BaseModel):
     items: List[TicketOut]

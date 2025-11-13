@@ -21,6 +21,7 @@ from app.services.websocket_manager import manager
 
 router = APIRouter(prefix="/tickets", tags=["tickets"])
 
+
 @router.post("", status_code=201, response_model=TicketOut)
 async def create_ticket(
     ticket_data: TicketCreate,
@@ -31,49 +32,51 @@ async def create_ticket(
         # Run NLP classification
         text = ticket_data.subject + " " + ticket_data.body
         intent, intent_score, sentiment, sentiment_score, low = nlp.classify_text(text)
-        
+
         # Create the ticket without embedding first
         ticket = Ticket(
             subject=ticket_data.subject,
             body=ticket_data.body,
             channel=ticket_data.channel,
             customer_id=ticket_data.customer_id,
-            language=ticket_data.language or "en"
+            language=ticket_data.language or "en",
         )
-        
+
         session.add(ticket)
         session.commit()
         session.refresh(ticket)
-        
+
         # Generate and update embedding using raw SQL (pgvector requires casting)
         embedding_vector = emb.encode_to_list(text)
         embedding_str = str(embedding_vector)
-        
+
         from sqlalchemy import text as sql_text
-        update_query = sql_text("""
+
+        update_query = sql_text(
+            """
             UPDATE tickets 
             SET embedding = CAST(:embedding AS vector)
             WHERE id = CAST(:ticket_id AS uuid)
-        """)
+        """
+        )
         session.execute(update_query, {"embedding": embedding_str, "ticket_id": str(ticket.id)})
         session.commit()
         priority = choose_priority(intent, sentiment, text)
 
-        
         # Save classification
         classification = TicketClassification(
-        ticket_id=ticket.id,
-        intent=intent,
-        sentiment=sentiment,
-        priority=priority,
-        confidence=intent_score,  # or min(intent_score, sentiment_score)
-        low_confidence=low
+            ticket_id=ticket.id,
+            intent=intent,
+            sentiment=sentiment,
+            priority=priority,
+            confidence=intent_score,  # or min(intent_score, sentiment_score)
+            low_confidence=low,
         )
-        
+
         session.add(classification)
         session.commit()
         session.refresh(classification)
-        
+
         ticket_out = TicketOut(
             id=ticket.id,
             subject=ticket.subject,
@@ -90,28 +93,27 @@ async def create_ticket(
                 priority=classification.priority,
                 confidence=classification.confidence,
                 low_confidence=classification.low_confidence,
-            )
+            ),
         )
-        
+
         # Broadcast new ticket to all connected clients
         background_tasks.add_task(
-            manager.broadcast_ticket_update,
-            "ticket_created",
-            ticket_out.model_dump()
+            manager.broadcast_ticket_update, "ticket_created", ticket_out.model_dump()
         )
-        
+
         # Send high-priority alert if urgent
         if priority in ["urgent", "high"]:
             background_tasks.add_task(
-                manager.broadcast_high_priority_alert,
-                ticket_out.model_dump()
+                manager.broadcast_high_priority_alert, ticket_out.model_dump()
             )
-        
+
         return ticket_out
-        
+
     except Exception:
         logger.exception("CREATE_TICKET_FAILED")
         raise internal_error("CREATE_TICKET_FAILED", "Could not create ticket.")
+
+
 # ... keep create_ticket and get_ticket as you have them ...
 @router.get("/{ticket_id}", response_model=TicketOut)
 def get_ticket(
@@ -122,14 +124,14 @@ def get_ticket(
         ticket = session.get(Ticket, ticket_id)
         if not ticket:
             raise not_found("TICKET_NOT_FOUND", f"Ticket {ticket_id} not found.")
-        
+
         # Get latest classification
         classification = session.exec(
             select(TicketClassification)
             .where(TicketClassification.ticket_id == ticket_id)
             .order_by(TicketClassification.created_at.desc())
         ).first()
-        
+
         return TicketOut(
             id=ticket.id,
             subject=ticket.subject,
@@ -147,16 +149,19 @@ def get_ticket(
                     priority=classification.priority,
                     confidence=classification.confidence,
                     low_confidence=classification.low_confidence,
-                ) if classification else None
-            )
+                )
+                if classification
+                else None
+            ),
         )
-        
+
     except HTTPException:
         raise
     except Exception:
         logger.exception("GET_TICKET_FAILED")
         raise internal_error("GET_TICKET_FAILED", "Could not retrieve ticket.")
-    
+
+
 @router.get("", response_model=TicketListOut)
 def list_tickets(
     page: int = Query(1, ge=1),
@@ -205,9 +210,7 @@ def list_tickets(
             base = base.where(and_(*conditions))
 
         # Total count AFTER filters
-        total = session.exec(
-            select(func.count()).select_from(base.subquery())
-        ).one()
+        total = session.exec(select(func.count()).select_from(base.subquery())).one()
 
         # Page slice ordered by newest ticket
         page_q = base.order_by(T.created_at.desc()).offset((page - 1) * page_size).limit(page_size)
@@ -234,7 +237,9 @@ def list_tickets(
                             priority=cl.priority,
                             confidence=cl.confidence,
                             low_confidence=cl.low_confidence,
-                        ) if cl else None
+                        )
+                        if cl
+                        else None
                     ),
                 )
             )
@@ -257,27 +262,30 @@ def get_similar_tickets(
     """
     try:
         from sqlalchemy import text
-        
+
         # First check if ticket exists and has an embedding using raw SQL
-        check_query = text("""
+        check_query = text(
+            """
             SELECT embedding FROM tickets WHERE id = CAST(:ticket_id AS uuid)
-        """)
-        
+        """
+        )
+
         result = session.execute(check_query, {"ticket_id": str(ticket_id)})
         row = result.first()
-        
+
         if not row:
             raise not_found("TICKET_NOT_FOUND", f"Ticket {ticket_id} not found")
-        
+
         if not row.embedding:
             return {"similar_tickets": []}
-        
+
         # Get the embedding as string representation
         query_embedding = str(row.embedding)
-        
+
         # Build vector similarity query
         # Using raw SQL for pgvector cosine similarity operator
-        query = text("""
+        query = text(
+            """
             SELECT 
                 id,
                 subject,
@@ -290,29 +298,27 @@ def get_similar_tickets(
                 AND (1 - (embedding <=> CAST(:query_embedding AS vector))) > 0.5
             ORDER BY embedding <=> CAST(:query_embedding AS vector)
             LIMIT :limit
-        """)
-        
-        result = session.execute(
-            query,
-            {
-                "query_embedding": query_embedding,
-                "ticket_id": str(ticket_id),
-                "limit": limit
-            }
+        """
         )
-        
+
+        result = session.execute(
+            query, {"query_embedding": query_embedding, "ticket_id": str(ticket_id), "limit": limit}
+        )
+
         similar_tickets = []
         for row in result:
-            similar_tickets.append({
-                "id": str(row.id),
-                "subject": row.subject,
-                "preview": row.body[:150] + "..." if len(row.body) > 150 else row.body,
-                "created_at": row.created_at.isoformat(),
-                "similarity": round(float(row.similarity), 4)
-            })
-        
+            similar_tickets.append(
+                {
+                    "id": str(row.id),
+                    "subject": row.subject,
+                    "preview": row.body[:150] + "..." if len(row.body) > 150 else row.body,
+                    "created_at": row.created_at.isoformat(),
+                    "similarity": round(float(row.similarity), 4),
+                }
+            )
+
         return {"similar_tickets": similar_tickets}
-        
+
     except HTTPException:
         raise
     except Exception:
