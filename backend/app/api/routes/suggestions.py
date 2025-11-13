@@ -3,13 +3,13 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
-from sqlmodel import Session, select
+from sqlmodel import Session
 
 from app.core.errors import internal_error, logger, not_found
 from app.db.base import get_session
 from app.db.models.kb import KBArticle
 from app.db.models.resolutions import Resolution
-from app.db.models.ticket import Ticket, TicketClassification
+from app.db.models.ticket import Ticket
 from app.services.suggestions import suggest_for_text
 
 router = APIRouter(prefix="/suggestions", tags=["suggestions"])

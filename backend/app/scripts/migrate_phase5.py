@@ -4,10 +4,13 @@ Run this script to update the database schema for Phase 5 WebSocket features.
 """
 
 import sys
+
 sys.path.insert(0, '/app')
 
-from app.db.base import engine
 from sqlalchemy import text
+
+from app.db.base import engine
+
 
 def migrate():
     """Add status and assigned_agent_id columns to tickets table"""

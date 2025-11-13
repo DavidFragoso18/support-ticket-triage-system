@@ -2,9 +2,10 @@
 LLM service for generating response suggestions using Ollama or OpenAI.
 """
 import os
+from typing import Dict, List, Optional
+
 import httpx
-import json
-from typing import Optional, List, Dict
+
 from app.core.errors import logger
 
 

@@ -1,8 +1,6 @@
 """
 LLM-powered response generation routes using RAG.
 """
-from datetime import datetime
-from typing import Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Body, Depends, Query
@@ -15,7 +13,6 @@ from app.db.models.ai_responses import AIResponse
 from app.db.models.ticket import Ticket
 from app.nlp.embeddings import emb
 from app.services.llm import llm_service
-
 
 router = APIRouter(prefix="/llm", tags=["llm"])
 

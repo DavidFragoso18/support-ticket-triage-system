@@ -1,10 +1,12 @@
 import csv
 from pathlib import Path
 from typing import Optional
-from sqlmodel import Session
-from app.db.base import engine, create_db_and_tables
-from app.db.models.ticket import Ticket
 from uuid import UUID
+
+from sqlmodel import Session
+
+from app.db.base import create_db_and_tables, engine
+from app.db.models.ticket import Ticket
 
 CSV_PATH = Path(__file__).resolve().parents[3] / "data" / "seeds" / "tickets_seed.csv"
 

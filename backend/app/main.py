@@ -1,13 +1,23 @@
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
+from app.api.routes import (
+    analytics,
+    classify,
+    feedback,
+    kb,
+    llm,
+    resolutions,
+    search,
+    suggestions,
+    tickets,
+    websocket,
+)
 from app.core.config import settings
 from app.db.base import create_db_and_tables
-from app.api.routes import tickets, classify, suggestions
-from app.api.routes import kb, resolutions, feedback, analytics, search, websocket, llm
-from app.services.websocket_manager import manager
-
 from app.nlp.pipeline import nlp  # ensures model loads at startup
+from app.services.websocket_manager import manager
 
 app = FastAPI(title="AI Ticket Triage", version="0.1.0")
 

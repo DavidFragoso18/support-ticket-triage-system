@@ -2,11 +2,14 @@
 Update existing ticket dates to be recent (for demo/testing purposes)
 This spreads tickets across the last 7 days so analytics charts show data
 """
-from datetime import datetime, timedelta
-from sqlmodel import Session, select
-from app.db.base import engine, create_db_and_tables
-from app.db.models.ticket import Ticket
 import random
+from datetime import datetime, timedelta
+
+from sqlmodel import Session, select
+
+from app.db.base import create_db_and_tables, engine
+from app.db.models.ticket import Ticket
+
 
 def main():
     create_db_and_tables()

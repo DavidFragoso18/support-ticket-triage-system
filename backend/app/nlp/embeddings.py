@@ -1,6 +1,7 @@
 import logging
+
 import numpy as np
-from sentence_transformers import SentenceTransformer, LoggingHandler
+from sentence_transformers import LoggingHandler, SentenceTransformer
 
 # Configure console logging (dev only)
 logging.basicConfig(level=logging.INFO)

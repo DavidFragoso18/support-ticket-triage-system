@@ -8,10 +8,11 @@ Tests cover:
 - Pagination
 - Edge cases
 """
-import pytest
-from fastapi.testclient import TestClient
 from datetime import datetime, timedelta
 from uuid import uuid4
+
+import pytest
+from fastapi.testclient import TestClient
 
 from app.main import app
 

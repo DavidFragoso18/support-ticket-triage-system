@@ -1,6 +1,7 @@
+from typing import List
+
 from pydantic import BaseModel
-from typing import Dict, List
-from datetime import datetime
+
 
 class AnalyticsOverview(BaseModel):
     """Overall system metrics"""

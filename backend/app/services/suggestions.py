@@ -1,11 +1,13 @@
-import numpy as np
 from typing import List, Tuple, Union
+
+import numpy as np
 from sqlmodel import Session, select
+
 from app.db.models.kb import KBArticle
 from app.db.models.resolutions import Resolution
-from app.db.models.ticket import Ticket
-from app.services.serialize import from_bytes
 from app.nlp.embeddings import emb
+from app.services.serialize import from_bytes
+
 
 def cosine(a: np.ndarray, b: np.ndarray) -> float:
     # embeddings are normalized, but keep generic

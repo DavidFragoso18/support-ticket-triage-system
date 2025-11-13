@@ -1,8 +1,8 @@
 """
 Pytest configuration and fixtures for all tests.
 """
-import sys
 import os
+import sys
 from pathlib import Path
 
 # Add the backend directory to Python path so 'app' module can be imported
@@ -15,10 +15,11 @@ os.environ['PYTHONPATH'] = str(backend_dir) + os.pathsep + os.environ.get('PYTHO
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlmodel import Session, create_engine, SQLModel
+from sqlmodel import Session, SQLModel, create_engine
 from sqlmodel.pool import StaticPool
-from app.main import app
+
 from app.db.base import get_session
+from app.main import app
 
 
 @pytest.fixture(name="session")

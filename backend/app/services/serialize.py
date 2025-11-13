@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def to_bytes(vec: np.ndarray) -> bytes:
     return vec.tobytes()
 

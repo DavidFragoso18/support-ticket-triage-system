@@ -3,10 +3,9 @@ Tests for semantic and hybrid search functionality.
 """
 import pytest
 from fastapi.testclient import TestClient
-from sqlmodel import Session, select
-from app.main import app
-from app.db.models.ticket import Ticket
+from sqlmodel import Session
 
+from app.main import app
 
 client = TestClient(app)
 

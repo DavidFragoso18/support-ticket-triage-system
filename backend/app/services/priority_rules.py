@@ -1,5 +1,4 @@
 from typing import Literal, Optional
-import re
 
 Priority = Literal["P1", "P2", "P3"]
 

@@ -1,10 +1,12 @@
 """WebSocket connection manager for real-time updates"""
-from typing import Dict, Set, Any
-from fastapi import WebSocket
 import json
-import redis.asyncio as redis
-from app.core.config import settings
 import logging
+from typing import Dict, Set
+
+import redis.asyncio as redis
+from fastapi import WebSocket
+
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 

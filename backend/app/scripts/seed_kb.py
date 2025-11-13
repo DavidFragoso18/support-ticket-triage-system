@@ -1,11 +1,11 @@
-import csv
-import pandas as pd
 from pathlib import Path
+
+import pandas as pd
 from sqlmodel import Session, select
-from app.db.base import engine, create_db_and_tables
+
+from app.db.base import create_db_and_tables, engine
 from app.db.models.kb import KBArticle
 from app.nlp.embeddings import emb
-from app.services.serialize import to_bytes
 
 CSV_PATH = Path(__file__).resolve().parents[3] / "data" / "seeds" / "kb_articles.csv"
 

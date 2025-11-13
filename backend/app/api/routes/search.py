@@ -7,14 +7,11 @@ from typing import List
 
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
-from sqlmodel import Session, select, text
+from sqlmodel import Session, text
 
 from app.core.errors import internal_error, logger
 from app.db.base import get_session
-from app.db.models.kb import KBArticle
-from app.db.models.resolutions import Resolution
 from app.nlp.embeddings import emb
-
 
 router = APIRouter(prefix="/search", tags=["search"])
 
@@ -122,8 +119,7 @@ async def search_tickets(
     - hybrid: Combined approach with ranking (recommended)
     """
     try:
-        from app.db.models.ticket import Ticket, TicketClassification
-        from app.schemas.ticket import TicketOut, ClassificationOut
+        from app.schemas.ticket import ClassificationOut, TicketOut
         
         results = []
         

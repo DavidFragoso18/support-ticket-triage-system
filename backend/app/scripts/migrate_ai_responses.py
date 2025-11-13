@@ -1,14 +1,16 @@
 """
 Migration script to create ai_responses table.
 """
-import sys
 import os
+import sys
 
 # Add parent directory to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
 from sqlmodel import create_engine, text
+
 from app.core.config import settings
+
 
 def migrate():
     """Create ai_responses table"""

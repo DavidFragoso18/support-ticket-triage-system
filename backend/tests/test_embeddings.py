@@ -77,8 +77,9 @@ class TestEmbeddingSimilarity:
     
     def test_similar_texts_high_similarity(self):
         """Similar texts should have high cosine similarity"""
-        from app.nlp.embeddings import emb
         import numpy as np
+
+        from app.nlp.embeddings import emb
         
         text1 = "I cannot reset my password"
         text2 = "Password reset is not working"
@@ -94,8 +95,9 @@ class TestEmbeddingSimilarity:
     
     def test_different_texts_low_similarity(self):
         """Different texts should have lower similarity"""
-        from app.nlp.embeddings import emb
         import numpy as np
+
+        from app.nlp.embeddings import emb
         
         text1 = "I cannot reset my password"
         text2 = "I love this new feature"
@@ -112,8 +114,9 @@ class TestEmbeddingSimilarity:
     
     def test_identical_texts_perfect_similarity(self):
         """Identical texts should have similarity of 1.0"""
-        from app.nlp.embeddings import emb
         import numpy as np
+
+        from app.nlp.embeddings import emb
         
         text = "This is the same text"
         
@@ -233,8 +236,9 @@ class TestEmbeddingPerformance:
     
     def test_embedding_generation_speed(self):
         """Embedding generation should be reasonably fast"""
-        from app.nlp.embeddings import emb
         import time
+
+        from app.nlp.embeddings import emb
         
         text = "This is a test sentence for performance measurement"
         
@@ -249,8 +253,9 @@ class TestEmbeddingPerformance:
     
     def test_batch_embedding_generation(self):
         """Should efficiently handle multiple embeddings"""
-        from app.nlp.embeddings import emb
         import time
+
+        from app.nlp.embeddings import emb
         
         texts = [f"Test sentence number {i}" for i in range(10)]
         
@@ -270,8 +275,9 @@ class TestEmbeddingNormalization:
     
     def test_embedding_magnitude(self):
         """Check if embeddings are normalized"""
-        from app.nlp.embeddings import emb
         import numpy as np
+
+        from app.nlp.embeddings import emb
         
         text = "Test normalization"
         embedding = np.array(emb.encode_to_list(text))
@@ -292,8 +298,9 @@ class TestEmbeddingNormalization:
     
     def test_embedding_range(self):
         """Check typical value range in embeddings"""
-        from app.nlp.embeddings import emb
         import numpy as np
+
+        from app.nlp.embeddings import emb
         
         text = "Test value range"
         embedding = np.array(emb.encode_to_list(text))

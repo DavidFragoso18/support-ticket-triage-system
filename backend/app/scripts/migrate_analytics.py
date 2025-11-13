@@ -3,6 +3,7 @@ Migration script to create analytics tables for Phase 5.
 Run with: python -m app.scripts.migrate_analytics
 """
 from sqlalchemy import text
+
 from app.db.base import engine
 
 

@@ -1,6 +1,7 @@
 import re
 from typing import Optional
 
+
 # Normalize text a bit (lower/punct/whitespace)
 def normalize(text: str) -> str:
     t = text.lower()

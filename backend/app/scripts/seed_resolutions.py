@@ -1,11 +1,13 @@
 import csv
 from pathlib import Path
 from typing import Optional
+from uuid import UUID
+
 from sqlmodel import Session
-from app.db.base import engine, create_db_and_tables
+
+from app.db.base import create_db_and_tables, engine
 from app.db.models.resolutions import Resolution
 from app.nlp.embeddings import emb
-from uuid import UUID
 
 CSV_PATH = Path(__file__).resolve().parents[3] / "data" / "seeds" / "resolutions.csv"
 

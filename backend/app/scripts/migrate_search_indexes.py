@@ -3,6 +3,7 @@ Migration script to add full-text search indexes for Phase 5 semantic search.
 Run with: python -m app.scripts.migrate_search_indexes
 """
 from sqlalchemy import text
+
 from app.db.base import engine
 
 

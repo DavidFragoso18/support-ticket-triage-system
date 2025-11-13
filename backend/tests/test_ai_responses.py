@@ -8,12 +8,12 @@ Tests cover:
 - Saved responses retrieval
 - Context building (similar tickets, KB articles, resolutions)
 """
-import pytest
-from fastapi.testclient import TestClient
-from unittest.mock import Mock, patch, AsyncMock
-from app.main import app
 from uuid import uuid4
 
+import pytest
+from fastapi.testclient import TestClient
+
+from app.main import app
 
 client = TestClient(app)
 

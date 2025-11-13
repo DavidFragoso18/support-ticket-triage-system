@@ -8,9 +8,10 @@ Tests cover:
 - Edge cases (no embeddings, single ticket, non-existent ticket)
 - Limit parameter
 """
+from uuid import uuid4
+
 import pytest
 from fastapi.testclient import TestClient
-from uuid import uuid4
 
 from app.main import app
 

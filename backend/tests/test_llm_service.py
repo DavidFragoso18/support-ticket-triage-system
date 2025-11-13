@@ -1,8 +1,10 @@
 """
 Tests for LLM service and AI response generation.
 """
+from unittest.mock import AsyncMock, Mock, patch
+
 import pytest
-from unittest.mock import Mock, AsyncMock, patch
+
 from app.services.llm import LLMService
 
 

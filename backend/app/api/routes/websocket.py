@@ -114,8 +114,9 @@ async def claim_ticket(
     session.refresh(ticket)
     
     # Track agent activity
-    from app.db.models.analytics import AgentActivity
     from datetime import datetime
+
+    from app.db.models.analytics import AgentActivity
     activity = AgentActivity(
         agent_id=agent_id,
         ticket_id=ticket.id,
@@ -172,8 +173,9 @@ async def release_ticket(
     
     # Track agent activity
     if previous_agent_id:
-        from app.db.models.analytics import AgentActivity
         from datetime import datetime
+
+        from app.db.models.analytics import AgentActivity
         activity = AgentActivity(
             agent_id=previous_agent_id,
             ticket_id=ticket.id,

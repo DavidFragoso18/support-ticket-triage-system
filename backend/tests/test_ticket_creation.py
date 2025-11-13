@@ -7,9 +7,9 @@ Tests cover:
 - Embedding generation during creation
 - Edge cases and error handling
 """
-import pytest
-from fastapi.testclient import TestClient
 from uuid import uuid4
+
+from fastapi.testclient import TestClient
 
 from app.main import app
 

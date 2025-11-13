@@ -1,6 +1,8 @@
 # backend/app/scripts/enable_pgvector.py
 from sqlalchemy import text
+
 from app.db.base import engine
+
 
 def main():
     with engine.connect() as conn:

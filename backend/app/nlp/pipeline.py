@@ -1,7 +1,9 @@
-from transformers import pipeline
-from app.core.config import settings
 from typing import Tuple
-from app.nlp.intent_rules import rule_intent, normalize   # <-- already imported
+
+from transformers import pipeline
+
+from app.core.config import settings
+from app.nlp.intent_rules import normalize, rule_intent  # <-- already imported
 
 INTENT_LABELS = [
     "billing", "refund_cancellation", "account_management", "auth_login", 
