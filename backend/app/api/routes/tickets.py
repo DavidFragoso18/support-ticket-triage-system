@@ -1,16 +1,23 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, BackgroundTasks
-from typing import Optional, List
+from typing import List, Optional
 from uuid import UUID
-from sqlmodel import select, func, Session
+
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from sqlalchemy import and_
+from sqlmodel import Session, func, select
+
+from app.core.errors import internal_error, logger, not_found
 from app.db.base import get_session
 from app.db.models.ticket import Ticket, TicketClassification
-from app.schemas.ticket import TicketCreate, TicketOut, TicketListOut, ClassificationOut
-from app.nlp.pipeline import nlp
 from app.nlp.embeddings import emb
+from app.nlp.pipeline import nlp
+from app.schemas.ticket import (
+    ClassificationOut,
+    TicketCreate,
+    TicketListOut,
+    TicketOut,
+)
 from app.services.priority_rules import choose_priority
 from app.services.websocket_manager import manager
-from app.core.errors import internal_error, not_found, logger
 
 router = APIRouter(prefix="/tickets", tags=["tickets"])
 

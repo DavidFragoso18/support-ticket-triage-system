@@ -1,13 +1,21 @@
 """WebSocket routes for real-time ticket updates"""
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends, HTTPException, status
-from sqlmodel import Session, select
-from typing import Optional
-import uuid
 import logging
+import uuid
+from typing import Optional
+
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    WebSocket,
+    WebSocketDisconnect,
+    status,
+)
+from sqlmodel import Session, select
 
 from app.db.base import get_session
-from app.services.websocket_manager import manager
 from app.db.models.ticket import Ticket
+from app.services.websocket_manager import manager
 
 router = APIRouter()
 logger = logging.getLogger(__name__)

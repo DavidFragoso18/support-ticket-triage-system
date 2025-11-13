@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends
-from sqlmodel import Session, select
 from pydantic import BaseModel
+from sqlmodel import Session, select
+
 from app.db.base import get_session
 from app.db.models.kb import KBArticle
 

@@ -1,8 +1,9 @@
 from fastapi import APIRouter
-from app.schemas.classify import ClassifyIn, ClassifyOut
-from app.nlp.pipeline import nlp
-from app.services.priority_rules import choose_priority
+
 from app.core.errors import internal_error, logger
+from app.nlp.pipeline import nlp
+from app.schemas.classify import ClassifyIn, ClassifyOut
+from app.services.priority_rules import choose_priority
 
 router = APIRouter(prefix="/classify", tags=["classify"])
 

@@ -1,11 +1,13 @@
-from fastapi import APIRouter, Depends, HTTPException
 from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
+
+from app.core.errors import internal_error, logger, not_found
 from app.db.base import get_session
 from app.db.models.feedback import ClassificationFeedback
 from app.db.models.ticket import TicketClassification
 from app.schemas.feedback import FeedbackCreate, FeedbackOut
-from app.core.errors import internal_error, not_found, logger
 
 router = APIRouter(prefix="/feedback", tags=["feedback"])
 

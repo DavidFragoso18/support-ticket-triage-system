@@ -1,19 +1,20 @@
-from fastapi import APIRouter, Depends, Query
-from typing import Optional
 from datetime import datetime, timedelta
-from sqlmodel import Session, select, func
+
+from fastapi import APIRouter, Depends, Query
+from sqlmodel import Session, func, select
+
+from app.core.errors import internal_error, logger
 from app.db.base import get_session
-from app.db.models.ticket import Ticket, TicketClassification
 from app.db.models.feedback import ClassificationFeedback
+from app.db.models.ticket import Ticket, TicketClassification
 from app.schemas.analytics import (
     AnalyticsOverview,
-    IntentDistribution,
-    SentimentDistribution,
-    PriorityDistribution,
-    TimeSeriesData,
     ClassificationAccuracy,
+    IntentDistribution,
+    PriorityDistribution,
+    SentimentDistribution,
+    TimeSeriesData,
 )
-from app.core.errors import internal_error, logger
 
 router = APIRouter(prefix="/analytics", tags=["analytics"])
 
@@ -41,7 +42,7 @@ def get_overview(
         # Low confidence count
         low_confidence_count = session.exec(
             select(func.count(TicketClassification.id))
-            .where(TicketClassification.low_confidence == True)
+            .where(TicketClassification.low_confidence)
         ).one()
         
         # Feedback count
@@ -237,17 +238,38 @@ def get_classification_accuracy(
             )
         
         # Per-field calculations
-        # Intent: accepted if action='accepted' OR (action='corrected' but intent not changed)
-        intent_accepted = sum(1 for f in all_feedback if f.action == "accepted" or (f.action == "corrected" and f.corrected_intent is None))
-        intent_corrected = sum(1 for f in all_feedback if f.action == "corrected" and f.corrected_intent is not None)
+        # Intent: accepted if action='accepted' OR corrected but intent not changed
+        intent_accepted = sum(
+            1 for f in all_feedback
+            if f.action == "accepted"
+            or (f.action == "corrected" and f.corrected_intent is None)
+        )
+        intent_corrected = sum(
+            1 for f in all_feedback
+            if f.action == "corrected" and f.corrected_intent is not None
+        )
         
-        # Sentiment: accepted if action='accepted' OR (action='corrected' but sentiment not changed)
-        sentiment_accepted = sum(1 for f in all_feedback if f.action == "accepted" or (f.action == "corrected" and f.corrected_sentiment is None))
-        sentiment_corrected = sum(1 for f in all_feedback if f.action == "corrected" and f.corrected_sentiment is not None)
+        # Sentiment: accepted if action='accepted' OR corrected but sentiment not changed
+        sentiment_accepted = sum(
+            1 for f in all_feedback
+            if f.action == "accepted"
+            or (f.action == "corrected" and f.corrected_sentiment is None)
+        )
+        sentiment_corrected = sum(
+            1 for f in all_feedback
+            if f.action == "corrected" and f.corrected_sentiment is not None
+        )
         
-        # Priority: accepted if action='accepted' OR (action='corrected' but priority not changed)
-        priority_accepted = sum(1 for f in all_feedback if f.action == "accepted" or (f.action == "corrected" and f.corrected_priority is None))
-        priority_corrected = sum(1 for f in all_feedback if f.action == "corrected" and f.corrected_priority is not None)
+        # Priority: accepted if action='accepted' OR corrected but priority not changed
+        priority_accepted = sum(
+            1 for f in all_feedback
+            if f.action == "accepted"
+            or (f.action == "corrected" and f.corrected_priority is None)
+        )
+        priority_corrected = sum(
+            1 for f in all_feedback
+            if f.action == "corrected" and f.corrected_priority is not None
+        )
         
         # Calculate per-field accuracy (0.0 to 1.0)
         intent_accuracy = intent_accepted / total_feedback if total_feedback > 0 else 0.0
@@ -343,8 +365,8 @@ def get_agent_performance(
 ):
     """Get agent performance metrics"""
     try:
-        from app.schemas.analytics import AgentPerformance
         from app.db.models.analytics import AgentActivity, SuggestionFeedback
+        from app.schemas.analytics import AgentPerformance
         
         start_date = datetime.utcnow() - timedelta(days=days)
         

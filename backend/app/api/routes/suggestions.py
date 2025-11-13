@@ -1,14 +1,16 @@
+from typing import Optional
+from uuid import UUID
+
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
-from uuid import UUID
-from typing import Optional
 from sqlmodel import Session, select
+
+from app.core.errors import internal_error, logger, not_found
 from app.db.base import get_session
-from app.db.models.ticket import Ticket, TicketClassification
 from app.db.models.kb import KBArticle
 from app.db.models.resolutions import Resolution
+from app.db.models.ticket import Ticket, TicketClassification
 from app.services.suggestions import suggest_for_text
-from app.core.errors import internal_error, not_found, logger
 
 router = APIRouter(prefix="/suggestions", tags=["suggestions"])
 

@@ -1,13 +1,15 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlmodel import Session, select
-from pydantic import BaseModel
 from typing import Optional
 from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
+from sqlmodel import Session, select
+
+from app.core.errors import not_found
 from app.db.base import get_session
+from app.db.models.kb import KBArticle
 from app.db.models.resolutions import Resolution
 from app.db.models.ticket_resolution import TicketResolution
-from app.db.models.kb import KBArticle
-from app.core.errors import not_found
 
 router = APIRouter(prefix="/resolutions", tags=["resolutions"])
 

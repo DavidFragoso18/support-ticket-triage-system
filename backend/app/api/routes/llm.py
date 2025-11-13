@@ -1,19 +1,20 @@
 """
 LLM-powered response generation routes using RAG.
 """
-from fastapi import APIRouter, Depends, Query, Body
-from sqlmodel import Session, text, select
-from typing import Optional
-from pydantic import BaseModel
 from datetime import datetime
+from typing import Optional
 from uuid import UUID
 
+from fastapi import APIRouter, Body, Depends, Query
+from pydantic import BaseModel
+from sqlmodel import Session, select, text
+
+from app.core.errors import internal_error, logger
 from app.db.base import get_session
-from app.db.models.ticket import Ticket
 from app.db.models.ai_responses import AIResponse
+from app.db.models.ticket import Ticket
 from app.nlp.embeddings import emb
 from app.services.llm import llm_service
-from app.core.errors import internal_error, logger
 
 
 router = APIRouter(prefix="/llm", tags=["llm"])

@@ -3,16 +3,17 @@ Semantic search routes using vector embeddings.
 
 Provides similarity search across KB articles, resolutions, and tickets.
 """
+from typing import List
 
 from fastapi import APIRouter, Depends, Query
+from pydantic import BaseModel
 from sqlmodel import Session, select, text
-from typing import List
+
+from app.core.errors import internal_error, logger
 from app.db.base import get_session
 from app.db.models.kb import KBArticle
 from app.db.models.resolutions import Resolution
 from app.nlp.embeddings import emb
-from app.core.errors import internal_error, logger
-from pydantic import BaseModel
 
 
 router = APIRouter(prefix="/search", tags=["search"])
