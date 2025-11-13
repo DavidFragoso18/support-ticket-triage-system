@@ -23,6 +23,19 @@ from sqlmodel.pool import StaticPool  # noqa: E402
 from app.db.base import get_session  # noqa: E402
 from app.main import app  # noqa: E402
 
+# Import all models so SQLModel knows about them when creating tables
+from app.db.models import (  # noqa: E402, F401
+    AIResponse,
+    AgentActivity,
+    ClassificationFeedback,
+    KBArticle,
+    Resolution,
+    SuggestionFeedback,
+    Ticket,
+    TicketClassification,
+    TicketResolution,
+)
+
 
 @pytest.fixture(name="session")
 def session_fixture():
