@@ -4,10 +4,11 @@ Feedback database models.
 Defines SQLModel tables for classification feedback (user corrections).
 """
 
-from sqlmodel import SQLModel, Field
-from typing import Optional
 from datetime import datetime
+from typing import Optional
 from uuid import UUID, uuid4
+
+from sqlmodel import Field, SQLModel
 
 
 class ClassificationFeedback(SQLModel, table=True):

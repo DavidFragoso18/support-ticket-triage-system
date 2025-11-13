@@ -2,13 +2,15 @@
 Ticket Resolution database model.
 
 Links resolved tickets to their resolution content.
-This is different from Resolution (templates) - these are actual resolutions applied to specific tickets.
+This is different from Resolution (templates) - these are actual resolutions
+applied to specific tickets.
 """
 
-from sqlmodel import SQLModel, Field, Relationship
-from typing import Optional
 from datetime import datetime
+from typing import Optional
 from uuid import UUID, uuid4
+
+from sqlmodel import Field, SQLModel
 
 
 class TicketResolution(SQLModel, table=True):

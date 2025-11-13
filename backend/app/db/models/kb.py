@@ -4,11 +4,12 @@ Knowledge Base database models.
 Defines SQLModel tables for knowledge base articles.
 """
 
-from sqlmodel import SQLModel, Field, Column
-from typing import Optional
 from datetime import datetime
+from typing import Optional
 from uuid import UUID, uuid4
+
 from pgvector.sqlalchemy import Vector
+from sqlmodel import Column, Field, SQLModel
 
 
 class KBArticle(SQLModel, table=True):

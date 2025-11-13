@@ -2,10 +2,11 @@
 Analytics database models for tracking agent activities and feedback.
 """
 
-from sqlmodel import Field, SQLModel
 from datetime import datetime
 from typing import Optional
 from uuid import UUID, uuid4
+
+from sqlmodel import Field, SQLModel
 
 
 class AgentActivity(SQLModel, table=True):

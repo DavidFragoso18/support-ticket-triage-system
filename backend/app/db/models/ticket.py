@@ -4,11 +4,11 @@ Ticket database models.
 Defines SQLModel tables for support tickets and their classifications.
 """
 
-from sqlmodel import SQLModel, Field, Relationship, Column
-from sqlalchemy import Text
-from typing import Optional
 from datetime import datetime
+from typing import Optional
 from uuid import UUID, uuid4
+
+from sqlmodel import Field, Relationship, SQLModel
 
 
 class Ticket(SQLModel, table=True):

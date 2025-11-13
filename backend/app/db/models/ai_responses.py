@@ -4,10 +4,11 @@ AI-generated response database models.
 Defines SQLModel tables for storing AI-generated responses.
 """
 
-from sqlmodel import SQLModel, Field
-from typing import Optional
 from datetime import datetime
+from typing import Optional
 from uuid import UUID, uuid4
+
+from sqlmodel import Field, SQLModel
 
 
 class AIResponse(SQLModel, table=True):

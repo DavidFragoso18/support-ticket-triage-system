@@ -4,11 +4,12 @@ Resolutions database models.
 Defines SQLModel tables for suggested ticket resolutions.
 """
 
-from sqlmodel import SQLModel, Field, Column
-from typing import Optional
 from datetime import datetime
+from typing import Optional
 from uuid import UUID, uuid4
+
 from pgvector.sqlalchemy import Vector
+from sqlmodel import Column, Field, SQLModel
 
 
 class Resolution(SQLModel, table=True):
