@@ -279,8 +279,10 @@ secrets.json
 *.pickle
 data/
 datasets/
-models/
 checkpoints/
+# Ignore ML model directories but NOT app/db/models
+/models/
+**/ml_models/
 
 # Application specific
 uploads/
