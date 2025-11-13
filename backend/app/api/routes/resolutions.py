@@ -27,7 +27,10 @@ class ApplySuggestionRequest(BaseModel):
     agent_id: Optional[str] = None
 
 @router.get("", response_model=list[TicketResolutionOut])
-def list_ticket_resolutions(ticket_id: Optional[UUID] = None, session: Session = Depends(get_session)):
+def list_ticket_resolutions(
+    ticket_id: Optional[UUID] = None,
+    session: Session = Depends(get_session)
+):
     """
     List actual resolutions applied to tickets. Optionally filter by ticket_id.
     """

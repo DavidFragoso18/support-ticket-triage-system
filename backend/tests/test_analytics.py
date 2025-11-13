@@ -114,9 +114,6 @@ class TestAnalyticsCalculations:
             ticket = r.json()
             ticket_id = ticket["id"]
             
-            # Get classification
-            classification = ticket.get("classification", {})
-            
             # Submit feedback
             if correct:
                 # Accept as correct
@@ -411,7 +408,7 @@ class TestAnalyticsTrends:
             # Date should be in ISO format
             try:
                 datetime.fromisoformat(trend["date"].replace("Z", "+00:00"))
-            except:
+            except (ValueError, AttributeError):
                 pytest.fail("Date is not in valid ISO format")
     
     def test_analytics_trends_count_matches_days(self):
@@ -527,4 +524,7 @@ class TestAgentPerformance:
         
         # avg_resolution_time can be null or a number
         for agent in data:
-            assert agent["avg_resolution_time"] is None or isinstance(agent["avg_resolution_time"], (int, float))
+            assert (
+                agent["avg_resolution_time"] is None
+                or isinstance(agent["avg_resolution_time"], (int, float))
+            )

@@ -43,7 +43,7 @@ class TestLLMService:
         """Test LLM service initializes with correct defaults"""
         assert llm_service.ollama_url == "http://ollama:11434"
         assert llm_service.model == "llama3.2:latest"
-        assert llm_service.use_ollama == True
+        assert llm_service.use_ollama
     
     def test_build_context_string_with_tickets(self, llm_service, sample_context):
         """Test context string building with ticket data"""
@@ -72,7 +72,9 @@ class TestLLMService:
         ("technical", "detailed with technical explanations"),
         ("empathetic", "understanding and empathetic")
     ])
-    def test_build_prompt_with_different_tones(self, llm_service, sample_context, tone, expected_instruction):
+    def test_build_prompt_with_different_tones(
+        self, llm_service, sample_context, tone, expected_instruction
+    ):
         """Test prompt building with different tones"""
         prompt = llm_service._build_prompt(
             "Password reset issue",
@@ -137,11 +139,15 @@ class TestLLMService:
         assert response is None
     
     @pytest.mark.asyncio
-    async def test_generate_response_uses_ollama_when_enabled(self, llm_service, sample_context):
+    async def test_generate_response_uses_ollama_when_enabled(
+        self, llm_service, sample_context
+    ):
         """Test that Ollama is used when enabled"""
         llm_service.use_ollama = True
         
-        with patch.object(llm_service, '_generate_with_ollama', new_callable=AsyncMock) as mock_ollama:
+        with patch.object(
+            llm_service, '_generate_with_ollama', new_callable=AsyncMock
+        ) as mock_ollama:
             mock_ollama.return_value = "Ollama response"
             
             response = await llm_service.generate_response(
@@ -155,12 +161,16 @@ class TestLLMService:
             mock_ollama.assert_called_once()
     
     @pytest.mark.asyncio
-    async def test_generate_response_falls_back_to_openai(self, llm_service, sample_context):
+    async def test_generate_response_falls_back_to_openai(
+        self, llm_service, sample_context
+    ):
         """Test fallback to OpenAI when Ollama is disabled"""
         llm_service.use_ollama = False
         llm_service.openai_api_key = "test-key"
         
-        with patch.object(llm_service, '_generate_with_openai', new_callable=AsyncMock) as mock_openai:
+        with patch.object(
+            llm_service, '_generate_with_openai', new_callable=AsyncMock
+        ) as mock_openai:
             mock_openai.return_value = "OpenAI response"
             
             response = await llm_service.generate_response(

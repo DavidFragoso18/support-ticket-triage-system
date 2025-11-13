@@ -19,7 +19,11 @@ class Embeddings:
     def encode_text(self, text: str) -> np.ndarray:
         """Encode text to numpy embedding vector (384 dimensions)."""
         logger.info("Encoding text...")
-        vec = self.model.encode([text], normalize_embeddings=True, show_progress_bar=True)  # (1, 384)
+        vec = self.model.encode(
+            [text],
+            normalize_embeddings=True,
+            show_progress_bar=True
+        )  # (1, 384)
         logger.info("Encoding done.")
         return vec[0].astype(np.float32)
     

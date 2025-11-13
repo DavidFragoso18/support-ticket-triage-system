@@ -16,7 +16,11 @@ def cosine(a: np.ndarray, b: np.ndarray) -> float:
         return 0.0
     return float(np.dot(a, b) / denom)
 
-def suggest_for_text(session: Session, text: str, top_k: int = 5) -> List[Tuple[Union[KBArticle, Resolution], float]]:
+def suggest_for_text(
+    session: Session,
+    text: str,
+    top_k: int = 5
+) -> List[Tuple[Union[KBArticle, Resolution], float]]:
     """
     Find relevant KB articles and resolution templates for a ticket.
     Returns a combined list of suggestions sorted by relevance (score is cosine similarity).

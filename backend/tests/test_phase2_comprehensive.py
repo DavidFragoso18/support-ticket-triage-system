@@ -30,7 +30,10 @@ class TestTicketFiltering:
         # Billing ticket - negative sentiment, P1 priority
         billing_ticket = {
             "subject": "Double charge on my account",
-            "body": "I was charged twice for my subscription. This is unacceptable, please refund immediately.",
+            "body": (
+                "I was charged twice for my subscription. "
+                "This is unacceptable, please refund immediately."
+            ),
             "channel": "email",
             "customer_id": f"test-{uuid4().hex[:8]}"
         }
@@ -228,7 +231,10 @@ class TestSuggestions:
         """Create a billing-related ticket"""
         ticket_data = {
             "subject": "Refund request for double charge",
-            "body": "I was charged twice for my subscription this month. Can I get a refund for the duplicate charge?",
+            "body": (
+                "I was charged twice for my subscription this month. "
+                "Can I get a refund for the duplicate charge?"
+            ),
             "channel": "email",
             "customer_id": f"test-{uuid4().hex[:8]}"
         }
@@ -241,7 +247,10 @@ class TestSuggestions:
         """Create a password-related ticket"""
         ticket_data = {
             "subject": "Cannot reset password",
-            "body": "I'm trying to reset my password but the email link is not working. I need access to my account.",
+            "body": (
+                "I'm trying to reset my password but the email link is not working. "
+                "I need access to my account."
+            ),
             "channel": "web",
             "customer_id": f"test-{uuid4().hex[:8]}"
         }

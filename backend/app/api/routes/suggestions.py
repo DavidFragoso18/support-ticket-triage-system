@@ -23,7 +23,10 @@ class SuggestionOut(BaseModel):
     ticket_id: Optional[UUID] = None  # For past resolutions
 
 @router.get("/{ticket_id}", response_model=list[SuggestionOut])
-def get_suggestions(ticket_id: UUID, session: Session = Depends(get_session)) -> list[SuggestionOut]:
+def get_suggestions(
+    ticket_id: UUID,
+    session: Session = Depends(get_session)
+) -> list[SuggestionOut]:
     try:
         t = session.get(Ticket, ticket_id)
         if not t:

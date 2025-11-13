@@ -13,13 +13,14 @@ if str(backend_dir) not in sys.path:
 # Also set PYTHONPATH environment variable
 os.environ['PYTHONPATH'] = str(backend_dir) + os.pathsep + os.environ.get('PYTHONPATH', '')
 
-import pytest
-from fastapi.testclient import TestClient
-from sqlmodel import Session, SQLModel, create_engine
-from sqlmodel.pool import StaticPool
+# Imports must come after path manipulation above
+import pytest  # noqa: E402
+from fastapi.testclient import TestClient  # noqa: E402
+from sqlmodel import Session, SQLModel, create_engine  # noqa: E402
+from sqlmodel.pool import StaticPool  # noqa: E402
 
-from app.db.base import get_session
-from app.main import app
+from app.db.base import get_session  # noqa: E402
+from app.main import app  # noqa: E402
 
 
 @pytest.fixture(name="session")

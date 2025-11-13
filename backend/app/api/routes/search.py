@@ -233,9 +233,13 @@ async def search_tickets(
                     t.id, t.subject, t.body, t.channel, t.customer_id, t.language,
                     t.created_at, t.updated_at, t.status, t.assigned_agent_id,
                     (1 - (t.embedding <=> CAST(:embedding AS vector))) as semantic_score,
-                    COALESCE(ts_rank(t.search_vector, to_tsquery('english', :query)), 0) as keyword_score,
+                    COALESCE(
+                        ts_rank(t.search_vector, to_tsquery('english', :query)), 0
+                    ) as keyword_score,
                     (0.6 * (1 - (t.embedding <=> CAST(:embedding AS vector))) + 
-                     0.4 * COALESCE(ts_rank(t.search_vector, to_tsquery('english', :query)), 0)) as hybrid_score,
+                     0.4 * COALESCE(
+                         ts_rank(t.search_vector, to_tsquery('english', :query)), 0
+                     )) as hybrid_score,
                     tc.id as classification_id, tc.intent, tc.sentiment, tc.priority,
                     tc.confidence, tc.low_confidence
                 FROM tickets t

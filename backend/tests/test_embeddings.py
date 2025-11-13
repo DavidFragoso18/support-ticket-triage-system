@@ -138,7 +138,7 @@ class TestEmbeddingEdgeCases:
         from app.nlp.embeddings import emb
         
         try:
-            embedding = emb.encode_to_list("")
+            emb.encode_to_list("")
             # Should return something or raise error
             assert True
         except Exception:
@@ -243,7 +243,7 @@ class TestEmbeddingPerformance:
         text = "This is a test sentence for performance measurement"
         
         start_time = time.time()
-        embedding = emb.encode_to_list(text)
+        emb.encode_to_list(text)
         end_time = time.time()
         
         generation_time = end_time - start_time

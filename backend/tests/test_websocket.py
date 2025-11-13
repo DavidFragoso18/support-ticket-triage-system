@@ -153,7 +153,7 @@ def test_websocket_receives_new_ticket_broadcast():
             assert message["type"] == "ticket_update"
             assert message["event"] == "ticket_created"
             assert "data" in message
-        except:
+        except Exception:
             # If no message received, that's okay for now
             # (broadcast happens in background task which may be delayed)
             pass

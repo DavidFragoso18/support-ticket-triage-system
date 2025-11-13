@@ -103,9 +103,12 @@ class LLMService:
             "empathetic": "Use an empathetic and understanding tone."
         }
         
-        tone_instruction = tone_instructions.get(tone, tone_instructions["professional"])
+        tone_instruction = tone_instructions.get(
+            tone, tone_instructions["professional"]
+        )
         
-        prompt = f"""You are a helpful customer support assistant. Generate a response to the following support ticket.
+        prompt = f"""You are a helpful customer support assistant. \
+Generate a response to the following support ticket.
 
 {tone_instruction}
 
@@ -116,7 +119,9 @@ Description: {body}
 RELEVANT CONTEXT:
 {context}
 
-Generate a helpful, accurate, and actionable response that addresses the customer's issue. If the context includes solutions or KB articles, reference them in your response. Keep the response concise (2-3 paragraphs maximum).
+Generate a helpful, accurate, and actionable response that addresses the customer's issue. \
+If the context includes solutions or KB articles, reference them in your response. \
+Keep the response concise (2-3 paragraphs maximum).
 
 RESPONSE:"""
         
@@ -171,7 +176,10 @@ RESPONSE:"""
                     json={
                         "model": "gpt-3.5-turbo",
                         "messages": [
-                            {"role": "system", "content": "You are a helpful customer support assistant."},
+                            {
+                                "role": "system",
+                                "content": "You are a helpful customer support assistant."
+                            },
                             {"role": "user", "content": prompt}
                         ],
                         "temperature": 0.7,

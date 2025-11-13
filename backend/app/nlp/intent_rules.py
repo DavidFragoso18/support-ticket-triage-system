@@ -35,11 +35,23 @@ _INTENT_PATTERNS: dict[str, list[re.Pattern]] = {
         re.compile(r"\b(privacy|sharing|notification)\s+settings\b"),
     ],
     "bug_issue": [
-        re.compile(r"\b(bug|error|crash|exception|500|timeout|stacktrace|broken|not working|does not work|doesnt work)\b"),
+        re.compile(
+            r"\b(bug|error|crash|exception|500|timeout|stacktrace|broken"
+            r"|not working|does not work|doesnt work)\b"
+        ),
         re.compile(r"\b(slow|laggy|freezing|loading|performance)\b"),
-        re.compile(r"\b(data\s+(lost|missing|disappeared)|workout\s+tracker|not\s+recording)\b"),
-        re.compile(r"\b(app\s+crash|wont\s+(play|load|sync)|will not\s+(play|load|sync)|notifications?\s+not\s+working)\b"),
-        re.compile(r"\b(barcode\s+scanner|video\s+wont\s+play|video\s+will not\s+play|cache|offline)\b"),
+        re.compile(
+            r"\b(data\s+(lost|missing|disappeared)|workout\s+tracker"
+            r"|not\s+recording)\b"
+        ),
+        re.compile(
+            r"\b(app\s+crash|wont\s+(play|load|sync)|will not\s+(play|load|sync)"
+            r"|notifications?\s+not\s+working)\b"
+        ),
+        re.compile(
+            r"\b(barcode\s+scanner|video\s+wont\s+play"
+            r"|video\s+will not\s+play|cache|offline)\b"
+        ),
     ],
     "usage_howto": [
         re.compile(r"\b(how\s+do\s+i|how to|where can i|steps to|guide|tutorial)\b"),

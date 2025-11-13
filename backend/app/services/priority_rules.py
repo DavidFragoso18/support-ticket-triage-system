@@ -25,7 +25,9 @@ def choose_priority(intent: Optional[str], sentiment: Optional[str], text: str) 
         return "P1"
     if intent == "auth_login" and ("cannot" in t or "can't" in t or "locked out" in t):
         return "P1"
-    if intent == "billing" and _contains(t, {"double charge", "charged twice", "fraud", "unauthorized"}):
+    if intent == "billing" and _contains(
+        t, {"double charge", "charged twice", "fraud", "unauthorized"}
+    ):
         return "P1"
 
     # Negative sentiment escalates

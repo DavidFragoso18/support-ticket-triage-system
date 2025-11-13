@@ -28,7 +28,11 @@ class NLPService:
         norm_text = normalize(text)
 
         # --- Intent via zero-shot model ---
-        intent_result = self.intent_pipe(norm_text, candidate_labels=INTENT_LABELS, multi_label=False)
+        intent_result = self.intent_pipe(
+            norm_text,
+            candidate_labels=INTENT_LABELS,
+            multi_label=False
+        )
         model_intent = intent_result["labels"][0]
         model_intent_score = float(intent_result["scores"][0])
 
@@ -59,7 +63,11 @@ class NLPService:
                 rule_override_low = True
             else:
                 # if model is confident, keep it; if not, prefer the rule
-                final_intent = model_intent if model_intent_score >= self.INTENT_CONF_THRESHOLD else rule
+                final_intent = (
+                    model_intent
+                    if model_intent_score >= self.INTENT_CONF_THRESHOLD
+                    else rule
+                )
                 rule_override_low = model_intent_score < self.INTENT_CONF_THRESHOLD
         else:
             final_intent = model_intent

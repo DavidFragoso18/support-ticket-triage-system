@@ -47,7 +47,10 @@ class SavedResponseInfo(BaseModel):
 @router.get("/suggest-response/{ticket_id}", response_model=ResponseSuggestion)
 async def suggest_response(
     ticket_id: str,
-    tone: str = Query(default="professional", regex="^(professional|friendly|technical|empathetic)$"),
+    tone: str = Query(
+        default="professional",
+        regex="^(professional|friendly|technical|empathetic)$"
+    ),
     session: Session = Depends(get_session),
 ):
     """
@@ -222,7 +225,9 @@ def _generate_fallback_response(ticket: Ticket, context: list) -> str:
                 res_data = item["data"]
                 response_parts.append(f"{i}. Solution: {res_data.get('title', 'N/A')}")
     else:
-        response_parts.append("Our team will review your case and provide a detailed response shortly.")
+        response_parts.append(
+            "Our team will review your case and provide a detailed response shortly."
+        )
     
     response_parts.extend([
         "",
@@ -289,7 +294,11 @@ async def get_saved_responses(
     Get all saved AI responses for a specific ticket.
     """
     try:
-        statement = select(AIResponse).where(AIResponse.ticket_id == UUID(ticket_id)).order_by(AIResponse.created_at.desc())
+        statement = (
+            select(AIResponse)
+            .where(AIResponse.ticket_id == UUID(ticket_id))
+            .order_by(AIResponse.created_at.desc())
+        )
         responses = session.exec(statement).all()
         
         return [{

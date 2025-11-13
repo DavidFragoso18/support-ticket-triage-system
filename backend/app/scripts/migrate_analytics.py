@@ -29,13 +29,16 @@ def migrate():
             CREATE INDEX IF NOT EXISTS agent_activities_agent_id_idx ON agent_activities(agent_id);
         """))
         conn.execute(text("""
-            CREATE INDEX IF NOT EXISTS agent_activities_ticket_id_idx ON agent_activities(ticket_id);
+            CREATE INDEX IF NOT EXISTS agent_activities_ticket_id_idx
+            ON agent_activities(ticket_id);
         """))
         conn.execute(text("""
-            CREATE INDEX IF NOT EXISTS agent_activities_action_idx ON agent_activities(action);
+            CREATE INDEX IF NOT EXISTS agent_activities_action_idx
+            ON agent_activities(action);
         """))
         conn.execute(text("""
-            CREATE INDEX IF NOT EXISTS agent_activities_timestamp_idx ON agent_activities(timestamp);
+            CREATE INDEX IF NOT EXISTS agent_activities_timestamp_idx
+            ON agent_activities(timestamp);
         """))
         
         # Create suggestion_feedback table
@@ -55,16 +58,20 @@ def migrate():
         
         # Create indexes for suggestion_feedback
         conn.execute(text("""
-            CREATE INDEX IF NOT EXISTS suggestion_feedback_ticket_id_idx ON suggestion_feedback(ticket_id);
+            CREATE INDEX IF NOT EXISTS suggestion_feedback_ticket_id_idx
+            ON suggestion_feedback(ticket_id);
         """))
         conn.execute(text("""
-            CREATE INDEX IF NOT EXISTS suggestion_feedback_type_idx ON suggestion_feedback(suggestion_type);
+            CREATE INDEX IF NOT EXISTS suggestion_feedback_type_idx
+            ON suggestion_feedback(suggestion_type);
         """))
         conn.execute(text("""
-            CREATE INDEX IF NOT EXISTS suggestion_feedback_agent_id_idx ON suggestion_feedback(agent_id);
+            CREATE INDEX IF NOT EXISTS suggestion_feedback_agent_id_idx
+            ON suggestion_feedback(agent_id);
         """))
         conn.execute(text("""
-            CREATE INDEX IF NOT EXISTS suggestion_feedback_timestamp_idx ON suggestion_feedback(timestamp);
+            CREATE INDEX IF NOT EXISTS suggestion_feedback_timestamp_idx
+            ON suggestion_feedback(timestamp);
         """))
         
         print("✅ Analytics tables created successfully!")
