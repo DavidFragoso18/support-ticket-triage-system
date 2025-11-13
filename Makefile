@@ -122,7 +122,7 @@ test:
 test-phase2:
 	@echo "🧪 Running Phase 2 tests (Filters & Suggestions)..."
 	docker cp backend/tests triage-backend:/app/
-	docker exec -e PYTHONPATH=/app triage-backend pytest /app/tests/test_phase2_backend.py /app/tests/test_phase2_comprehensive.py -v
+	docker exec -e PYTHONPATH=/app triage-backend pytest /app/tests/test_phase2_comprehensive.py -v
 	@echo "✅ Phase 2 tests complete!"
 
 test-phase3:

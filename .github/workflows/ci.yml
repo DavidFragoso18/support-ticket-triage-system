@@ -45,10 +45,19 @@ jobs:
       - name: Install dependencies
         working-directory: ./backend
         run: |
-          python -m pip install --upgrade pip
+          python -m pip install --upgrade pip setuptools wheel
           pip install -r requirements.txt
           pip install pytest pytest-cov httpx
-          pip install -e .
+          pip install -e . -v
+
+      - name: Verify installation
+        working-directory: ./backend
+        run: |
+          python -c "import sys; print('Python path:'); print('\n'.join(sys.path))"
+          python -c "import app; print('app package location:', app.__file__ if hasattr(app, '__file__') else 'no __file__')"
+          ls -la app/
+          ls -la app/db/
+          ls -la app/db/models/
 
       - name: Run tests
         working-directory: ./backend
@@ -106,8 +115,9 @@ jobs:
           python-version: '3.11'
 
       - name: Install linting tools
+        working-directory: ./backend
         run: |
-          python -m pip install --upgrade pip
+          python -m pip install --upgrade pip setuptools wheel
           pip install ruff black
 
       - name: Run Ruff
