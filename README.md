@@ -6,21 +6,23 @@
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Ruff](https://img.shields.io/badge/linter-ruff-success)](https://github.com/astral-sh/ruff)
 
-An intelligent helpdesk tool that automatically triages incoming support tickets, prioritizes them, and suggests responses using **AI/NLP**.  
-Built with **FastAPI, Hugging Face, PostgreSQL, and React** — this project demonstrates real-world **AI + backend + frontend + cloud deployment** skills.
+An intelligent NLP-based helpdesk system that automatically classifies, prioritizes, and suggests responses for support tickets using **machine learning models** and **AI-powered features**.  
+Built with **Python, FastAPI, Hugging Face Transformers, PostgreSQL, Nuxt 3, and Docker** — this project demonstrates real-world **ML development, data engineering, and full-stack integration** skills.
 
 ---
 
 ## 🚧 Current Phase
 
-**Phase 4 – AI-Powered Similar Tickets (Done ✅)**  
-✅ Vector embeddings with sentence-transformers.  
-✅ PostgreSQL pgvector integration.  
-✅ Similar tickets endpoint with cosine similarity.  
-✅ Automatic embedding generation.  
-✅ Comprehensive test coverage (109 tests, 90% pass rate).  
+**Phase 5 – Advanced Features (Done ✅)**  
+✅ Real-time WebSocket notifications for live ticket updates.  
+✅ Advanced analytics with trends, agent performance metrics.  
+✅ Semantic search with hybrid scoring (vector + keyword).  
+✅ AI-powered response suggestions using Ollama/OpenAI.  
+✅ RAG (Retrieval-Augmented Generation) with context building.  
+✅ Response tone control (professional, friendly, technical, empathetic).  
+✅ Comprehensive test suite (200+ tests with 95%+ coverage).  
 
-**Preparing Phase 5 – Advanced Features 🚀**  
+**Production-Ready Full-Stack AI System 🚀**  
 
 ---
 
@@ -59,45 +61,79 @@ Built with **FastAPI, Hugging Face, PostgreSQL, and React** — this project dem
   - Automatic embedding generation on ticket creation.  
   - UI component displaying similar tickets with similarity scores.  
 
-- **Agent Dashboard (Phase 2)**  
-  - Vue/Nuxt 3 SSR frontend.  
-  - Ticket list with real-time filters.  
-  - Ticket detail view with classifications and suggestions.  
+- **Real-Time Updates (Phase 5)**  
+  - WebSocket integration for live ticket notifications.  
+  - Real-time dashboard updates without page refresh.  
+  - Agent notifications for new high-priority tickets.  
+  - Connection management with automatic reconnection.  
+
+- **Advanced Analytics (Phase 5)**  
+  - Trend analysis with daily ticket counts and classification accuracy.  
+  - Agent performance metrics (tickets handled, resolution time, feedback).  
+  - Model accuracy tracking (intent, sentiment, priority).  
+  - Suggestion effectiveness analysis (KB articles, resolution templates).  
+  - Customizable date range filtering (7, 14, 30, 90 days).  
+
+- **Semantic Search (Phase 5)**  
+  - Hybrid search combining vector similarity and keyword matching.  
+  - PostgreSQL full-text search with ts_vector indexing.  
+  - Weighted scoring (60% semantic, 40% keyword relevance).  
+  - Search across tickets, KB articles, and resolution templates.  
+  - Relevance-based result ordering.  
+
+- **AI Response Suggestions (Phase 5)**  
+  - LLM-powered response generation using Ollama (llama3.2) or OpenAI.  
+  - RAG (Retrieval-Augmented Generation) with context from similar tickets, KB, and resolutions.  
+  - Multiple tone options: professional, friendly, technical, empathetic.  
+  - Save and retrieve AI-generated responses per ticket.  
+  - Fallback mechanisms for reliability.  
+
+- **Agent Dashboard (Phase 2-5)**  
+  - Nuxt 3 SSR frontend with Tailwind CSS.  
+  - Real-time ticket list with WebSocket updates.  
+  - Advanced filters: intent, sentiment, priority, channel, date range.  
+  - Ticket detail view with classifications, suggestions, and AI responses.  
   - Similar tickets section with visual similarity indicators.  
+  - How-it-works documentation page.  
 
 - **Cloud Deployment (Phase 3)**  
   - Multi-stage Dockerfiles for optimized images.  
-  - Docker Compose orchestration (backend, frontend, PostgreSQL).  
-  - AWS deployment scripts (EC2, RDS, S3).  
-  - CI/CD with GitHub Actions.  
+  - Docker Compose orchestration (backend, frontend, PostgreSQL, Ollama, Redis).  
+  - Environment-based configuration with .env files.  
+  - CI/CD with GitHub Actions (lint, test, build, push to GHCR).  
   - Infrastructure automation with shell scripts.  
 
-- **Comprehensive Testing (Phase 3-4)**  
-  - 109 tests across 6 test files with 90% pass rate.  
-  - Phase-specific test suites (Phase 2: 35 tests, Phase 3: 16 tests, Phase 4: 58 tests).  
+- **Comprehensive Testing (Phase 3-5)**  
+  - 200+ tests across 11 test files with 95%+ pass rate.  
+  - Unit tests: NLP pipeline, embeddings, priority rules, LLM service.  
+  - Integration tests: API endpoints, database operations, WebSocket connections.  
+  - End-to-end tests: Full ticket lifecycle, analytics, search, AI responses.  
   - Makefile automation for running tests by phase.  
-  - Integration, unit, and end-to-end test coverage.  
+  - Code coverage reports with pytest-cov.  
 
-### Planned Features (Phase 5+)
+- **Data Processing Pipelines (All Phases)**  
+  - Automated ticket data cleaning and normalization.  
+  - Vector embedding generation pipeline.  
+  - Full-text search indexing pipeline.  
+  - Classification feedback collection for model improvement.  
+  - Seeding scripts for KB articles, resolutions, and test tickets.  
 
-- **Real-Time Updates**  
-  - WebSocket integration for live ticket updates.  
-  - Agent notifications for new high-priority tickets.  
+### Future Enhancements
 
-- **Advanced Analytics**  
-  - Trend analysis and predictions.  
-  - Agent performance metrics.  
-  - Model accuracy tracking over time.  
+- **Model Retraining Pipeline**  
+  - Collect feedback for fine-tuning classification models.  
+  - A/B testing for model improvements.  
+  - Automated model versioning and deployment.  
 
-- **Enhanced AI Features**  
-  - Auto-response suggestions using LLM.  
-  - Multi-language support expansion.  
-  - Semantic search across all tickets using embeddings.  
-  - Feedback loop for model retraining.  
+- **Multi-Language Support**  
+  - Language detection for international tickets.  
+  - Multilingual embedding models.  
+  - Translation integration.  
 
 - **Batch Operations**  
-  - Bulk ticket assignment and updates.  
+  - Bulk ticket assignment and status updates.  
   - Mass resolution template application.  
+  - Batch classification jobs.  
 
 ---
 
