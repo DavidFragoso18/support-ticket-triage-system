@@ -2,6 +2,7 @@
 Suggestion providers with inheritance and generator-based ranking.
 Demonstrates OOP patterns for extensible suggestion systems.
 """
+
 from abc import ABC, abstractmethod
 from typing import Generator, List, Tuple
 
@@ -9,8 +10,6 @@ import numpy as np
 from sqlmodel import Session, select
 
 from app.db.models.kb import KBArticle
-from app.db.models.resolutions import Resolution
-from app.nlp.embeddings import emb
 from app.services.serialize import from_bytes
 
 

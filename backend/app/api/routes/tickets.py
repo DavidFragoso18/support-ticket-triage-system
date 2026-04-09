@@ -55,13 +55,11 @@ async def create_ticket(
         if session.bind.dialect.name != "sqlite":
             from sqlalchemy import text as sql_text
 
-            update_query = sql_text(
-                """
+            update_query = sql_text("""
                 UPDATE tickets 
                 SET embedding = CAST(:embedding AS vector)
                 WHERE id = CAST(:ticket_id AS uuid)
-            """
-            )
+            """)
             session.execute(update_query, {"embedding": embedding_str, "ticket_id": str(ticket.id)})
             session.commit()
         priority = choose_priority(intent, sentiment, text)
@@ -172,6 +170,10 @@ def list_tickets(
     intent: Optional[List[str]] = Query(default=None),
     sentiment: Optional[List[str]] = Query(default=None),
     priority: Optional[List[str]] = Query(default=None),
+    channel: Optional[List[str]] = Query(default=None),
+    start_date: Optional[str] = Query(default=None),
+    end_date: Optional[str] = Query(default=None),
+    search: Optional[str] = Query(default=None),
     session: Session = Depends(get_session),
 ) -> TicketListOut:
     try:
@@ -209,6 +211,20 @@ def list_tickets(
             conditions.append(C.sentiment.in_(sentiment))
         if priority:
             conditions.append(C.priority.in_(priority))
+        if channel:
+            conditions.append(T.channel.in_(channel))
+        if start_date:
+            conditions.append(T.created_at >= start_date)
+        if end_date:
+            conditions.append(T.created_at <= end_date + "T23:59:59.999999")
+        if search:
+            from sqlalchemy import or_
+
+            # PostgreSQL uses ILIKE for case-insensitive, SQLite uses LIKE
+            # (which is usually case-insensitive by default or configured so).
+            # SQLAlchemy's .ilike() is usually translated appropriately.
+            conditions.append(or_(T.subject.ilike(f"%{search}%"), T.body.ilike(f"%{search}%")))
+
         if conditions:
             base = base.where(and_(*conditions))
 
@@ -265,14 +281,14 @@ def get_similar_tickets(
     """
     try:
         from sqlalchemy import text
-        
+
         # Mock for SQLite (testing)
         if session.bind.dialect.name == "sqlite":
             # Check if ticket exists
             ticket = session.get(Ticket, ticket_id)
             if not ticket:
                 raise not_found("TICKET_NOT_FOUND", f"Ticket {ticket_id} not found")
-                
+
             # Return mock similar tickets
             return {
                 "similar_tickets": [
@@ -289,16 +305,14 @@ def get_similar_tickets(
                         "preview": "Another mock similar ticket...",
                         "created_at": datetime.utcnow().isoformat(),
                         "similarity": 0.85,
-                    }
+                    },
                 ][:limit]
             }
 
         # First check if ticket exists and has an embedding using raw SQL
-        check_query = text(
-            """
+        check_query = text("""
             SELECT embedding FROM tickets WHERE id = CAST(:ticket_id AS uuid)
-        """
-        )
+        """)
 
         result = session.execute(check_query, {"ticket_id": str(ticket_id)})
         row = result.first()
@@ -314,8 +328,7 @@ def get_similar_tickets(
 
         # Build vector similarity query
         # Using raw SQL for pgvector cosine similarity operator
-        query = text(
-            """
+        query = text("""
             SELECT 
                 id,
                 subject,
@@ -328,8 +341,7 @@ def get_similar_tickets(
                 AND (1 - (embedding <=> CAST(:query_embedding AS vector))) > 0.5
             ORDER BY embedding <=> CAST(:query_embedding AS vector)
             LIMIT :limit
-        """
-        )
+        """)
 
         result = session.execute(
             query, {"query_embedding": query_embedding, "ticket_id": str(ticket_id), "limit": limit}

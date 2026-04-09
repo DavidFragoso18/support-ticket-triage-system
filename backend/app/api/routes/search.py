@@ -66,15 +66,13 @@ def search_similar(
         results: List[SearchResult] = []
 
         # Search KB articles
-        kb_stmt = text(
-            """
+        kb_stmt = text("""
             SELECT id, title, body, (embedding <=> CAST(:embedding AS vector)) AS distance
             FROM kb_articles
             WHERE embedding IS NOT NULL
             ORDER BY embedding <=> CAST(:embedding AS vector)
             LIMIT :limit
-        """
-        )
+        """)
 
         kb_results = session.execute(
             kb_stmt, {"embedding": str(query_embedding), "limit": limit}
@@ -95,15 +93,13 @@ def search_similar(
                 )
 
         # Search Resolutions
-        res_stmt = text(
-            """
+        res_stmt = text("""
             SELECT id, title, body, (embedding <=> CAST(:embedding AS vector)) AS distance
             FROM resolutions
             WHERE embedding IS NOT NULL
             ORDER BY embedding <=> CAST(:embedding AS vector)
             LIMIT :limit
-        """
-        )
+        """)
 
         res_results = session.execute(
             res_stmt, {"embedding": str(query_embedding), "limit": limit}
@@ -149,7 +145,7 @@ async def search_tickets(
     """
     try:
         from app.schemas.ticket import ClassificationOut, TicketOut
-        
+
         # Mock for SQLite (testing)
         if session.bind.dialect.name == "sqlite":
             mock_ticket = TicketOut(
@@ -170,23 +166,18 @@ async def search_tickets(
                     low_confidence=False,
                 ),
             )
-            
+
             mock_result = {
                 "ticket": mock_ticket,
                 "score": 0.95,
                 "match_type": mode,
             }
-            
+
             if mode == "hybrid":
                 mock_result["semantic_score"] = 0.9
                 mock_result["keyword_score"] = 0.8
-                
-            return {
-                "query": q,
-                "mode": mode,
-                "results": [mock_result],
-                "count": 1
-            }
+
+            return {"query": q, "mode": mode, "results": [mock_result], "count": 1}
 
         results = []
 
@@ -195,8 +186,7 @@ async def search_tickets(
             query_embedding = emb.encode_to_list(q)
             embedding_str = str(query_embedding)
 
-            query = text(
-                """
+            query = text("""
                 SELECT 
                     t.id, t.subject, t.body, t.channel, t.customer_id, t.language,
                     t.created_at, t.updated_at, t.status, t.assigned_agent_id,
@@ -208,8 +198,7 @@ async def search_tickets(
                 WHERE t.embedding IS NOT NULL
                 ORDER BY t.embedding <=> CAST(:embedding AS vector)
                 LIMIT :limit
-            """
-            )
+            """)
 
             result = session.execute(query, {"embedding": embedding_str, "limit": limit})
             rows = result.fetchall()
@@ -247,8 +236,7 @@ async def search_tickets(
 
         elif mode == "keyword":
             # Full-text search using PostgreSQL tsvector
-            query = text(
-                """
+            query = text("""
                 SELECT 
                     t.id, t.subject, t.body, t.channel, t.customer_id, t.language,
                     t.created_at, t.updated_at, t.status, t.assigned_agent_id,
@@ -260,8 +248,7 @@ async def search_tickets(
                 WHERE t.search_vector @@ to_tsquery('english', :query)
                 ORDER BY rank DESC
                 LIMIT :limit
-            """
-            )
+            """)
 
             # Convert query to tsquery format (replace spaces with &)
             tsquery = " & ".join(q.split())
@@ -305,8 +292,7 @@ async def search_tickets(
             embedding_str = str(query_embedding)
             tsquery = " & ".join(q.split())
 
-            query = text(
-                """
+            query = text("""
                 SELECT 
                     t.id, t.subject, t.body, t.channel, t.customer_id, t.language,
                     t.created_at, t.updated_at, t.status, t.assigned_agent_id,
@@ -325,8 +311,7 @@ async def search_tickets(
                 WHERE t.embedding IS NOT NULL
                 ORDER BY hybrid_score DESC
                 LIMIT :limit
-            """
-            )
+            """)
 
             result = session.execute(
                 query, {"embedding": embedding_str, "query": tsquery, "limit": limit}

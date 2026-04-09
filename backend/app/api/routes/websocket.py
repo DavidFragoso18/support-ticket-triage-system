@@ -12,7 +12,7 @@ from fastapi import (
     WebSocketDisconnect,
     status,
 )
-from sqlmodel import Session, select
+from sqlmodel import Session
 
 from app.db.base import get_session
 from app.db.models.ticket import Ticket
@@ -81,8 +81,12 @@ async def claim_ticket(ticket_id: str, agent_id: str, session: Session = Depends
     other agents from working on it simultaneously.
     """
     # Get ticket from database
-    statement = select(Ticket).where(Ticket.id == ticket_id)
-    ticket = session.exec(statement).first()
+    try:
+        ticket_uuid = uuid.UUID(ticket_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid ticket ID format")
+
+    ticket = session.get(Ticket, ticket_uuid)
 
     if not ticket:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ticket not found")
@@ -133,8 +137,12 @@ async def release_ticket(ticket_id: str, session: Session = Depends(get_session)
     making it available for other agents to claim.
     """
     # Get ticket from database
-    statement = select(Ticket).where(Ticket.id == ticket_id)
-    ticket = session.exec(statement).first()
+    try:
+        ticket_uuid = uuid.UUID(ticket_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid ticket ID format")
+
+    ticket = session.get(Ticket, ticket_uuid)
 
     if not ticket:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ticket not found")

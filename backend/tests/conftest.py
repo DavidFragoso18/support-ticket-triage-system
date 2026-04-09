@@ -31,8 +31,8 @@ with patch("app.db.base.engine", mock_engine):
 
 # Import all models so SQLModel knows about them when creating tables
 from app.db.models import (  # noqa: E402, F401
-    AIResponse,
     AgentActivity,
+    AIResponse,
     ClassificationFeedback,
     KBArticle,
     Resolution,
@@ -71,14 +71,15 @@ def client_fixture(session: Session, engine):
 
     # Replace the app's database engine with our test engine
     import app.db.base as db_base_module
+
     db_base_module.engine = engine
-    
+
     app.dependency_overrides[get_session] = get_session_override
-    
+
     # Patch create_db_and_tables in app.main to prevent real DB connection
     with patch("app.main.create_db_and_tables"):
         # Use context manager to trigger startup/shutdown events
         with TestClient(app) as client:
             yield client
-        
+
     app.dependency_overrides.clear()

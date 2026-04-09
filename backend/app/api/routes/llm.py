@@ -4,11 +4,11 @@ LLM-powered response generation routes using RAG.
 
 from uuid import UUID
 
-from fastapi import APIRouter, Body, Depends, Query
+from fastapi import APIRouter, Body, Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlmodel import Session, select, text
 
-from app.core.errors import internal_error, logger
+from app.core.errors import internal_error, logger, not_found
 from app.db.base import get_session
 from app.db.models.ai_responses import AIResponse
 from app.db.models.ticket import Ticket
@@ -74,9 +74,14 @@ async def suggest_response(
     """
     try:
         # Get the ticket
-        ticket = session.get(Ticket, ticket_id)
+        try:
+            ticket_uuid = UUID(ticket_id) if isinstance(ticket_id, str) else ticket_id
+        except ValueError:
+            raise internal_error("INVALID_TICKET_ID", "Invalid ticket ID format")
+
+        ticket = session.get(Ticket, ticket_uuid)
         if not ticket:
-            raise internal_error("TICKET_NOT_FOUND", "Ticket not found")
+            raise not_found("TICKET_NOT_FOUND", "Ticket not found")
 
         # Build context using RAG
         context = await _build_rag_context(ticket.subject, ticket.body, session)
@@ -97,6 +102,8 @@ async def suggest_response(
             model=llm_service.model if llm_service.use_ollama else "gpt-3.5-turbo",
         )
 
+    except HTTPException:
+        raise
     except Exception:
         logger.exception("SUGGEST_RESPONSE_FAILED")
         raise internal_error("SUGGEST_RESPONSE_FAILED", "Could not generate response suggestion.")
@@ -112,16 +119,14 @@ async def _build_rag_context(subject: str, body: str, session: Session, max_item
 
     try:
         # 1. Find similar resolved tickets
-        ticket_query = text(
-            """
+        ticket_query = text("""
             SELECT id, subject, body, status
             FROM tickets
             WHERE embedding IS NOT NULL 
               AND status IN ('resolved', 'closed')
             ORDER BY embedding <=> CAST(:embedding AS vector)
             LIMIT :limit
-        """
-        )
+        """)
 
         ticket_results = session.execute(
             ticket_query, {"embedding": str(query_embedding), "limit": 3}
@@ -139,15 +144,13 @@ async def _build_rag_context(subject: str, body: str, session: Session, max_item
                 )
 
         # 2. Find relevant KB articles
-        kb_query = text(
-            """
+        kb_query = text("""
             SELECT id, title, body
             FROM kb_articles
             WHERE embedding IS NOT NULL
             ORDER BY embedding <=> CAST(:embedding AS vector)
             LIMIT :limit
-        """
-        )
+        """)
 
         kb_results = session.execute(
             kb_query, {"embedding": str(query_embedding), "limit": 2}
@@ -159,15 +162,13 @@ async def _build_rag_context(subject: str, body: str, session: Session, max_item
             )
 
         # 3. Find relevant resolution templates
-        res_query = text(
-            """
+        res_query = text("""
             SELECT id, title, body
             FROM resolutions
             WHERE embedding IS NOT NULL
             ORDER BY embedding <=> CAST(:embedding AS vector)
             LIMIT :limit
-        """
-        )
+        """)
 
         res_results = session.execute(
             res_query, {"embedding": str(query_embedding), "limit": 2}
@@ -237,9 +238,16 @@ async def save_response(
     """
     try:
         # Verify ticket exists
-        ticket = session.get(Ticket, request.ticket_id)
+        try:
+            ticket_uuid = (
+                UUID(request.ticket_id) if isinstance(request.ticket_id, str) else request.ticket_id
+            )
+        except ValueError:
+            raise internal_error("INVALID_TICKET_ID", "Invalid ticket ID format")
+
+        ticket = session.get(Ticket, ticket_uuid)
         if not ticket:
-            raise internal_error("TICKET_NOT_FOUND", "Ticket not found")
+            raise not_found("TICKET_NOT_FOUND", "Ticket not found")
 
         # Create AI response record
         ai_response = AIResponse(
@@ -264,6 +272,8 @@ async def save_response(
             message="Response saved successfully",
         )
 
+    except HTTPException:
+        raise
     except Exception:
         logger.exception("SAVE_RESPONSE_FAILED")
         raise internal_error("SAVE_RESPONSE_FAILED", "Could not save response.")

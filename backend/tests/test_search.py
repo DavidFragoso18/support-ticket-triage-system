@@ -3,12 +3,7 @@ Tests for semantic and hybrid search functionality.
 """
 
 import pytest
-from fastapi.testclient import TestClient
 from sqlmodel import Session
-
-from app.main import app
-
-
 
 
 class TestSemanticSearch:
@@ -52,10 +47,12 @@ class TestSemanticSearch:
         # Check that results have expected fields
         if len(data["results"]) > 0:
             result = data["results"][0]
-            assert "id" in result
-            assert "subject" in result
-            assert "body" in result
-            assert "similarity_score" in result or "match_type" in result
+            assert "ticket" in result
+            ticket = result["ticket"]
+            assert "id" in ticket
+            assert "subject" in ticket
+            assert "body" in ticket
+            assert "score" in result or "similarity_score" in result
 
     def test_search_with_custom_threshold(self, client):
         """Test search with custom similarity threshold"""
@@ -166,7 +163,9 @@ class TestSemanticSearch:
         # Should return similar results
         data1 = response1.json()
         data2 = response2.json()
-        assert len(data1["results"]) == len(data2["results"]) or abs(len(data1["results"]) - len(data2["results"])) <= 2
+        assert len(data1["results"]) == len(data2["results"]) or (
+            abs(len(data1["results"]) - len(data2["results"])) <= 2
+        )
 
 
 class TestSearchIndexes:
@@ -177,12 +176,15 @@ class TestSearchIndexes:
         # Skip for SQLite (PostgreSQL-specific feature)
         if session.bind.dialect.name == "sqlite":
             pytest.skip("PostgreSQL-specific test")
-        
+
         from sqlalchemy import text
+
         # Check if search_vector column exists
         result = session.execute(
-            text("SELECT column_name FROM information_schema.columns "
-            "WHERE table_name = 'tickets' AND column_name = 'search_vector'")
+            text(
+                "SELECT column_name FROM information_schema.columns "
+                "WHERE table_name = 'tickets' AND column_name = 'search_vector'"
+            )
         )
         assert result.fetchone() is not None
 
@@ -191,11 +193,14 @@ class TestSearchIndexes:
         # Skip for SQLite (PostgreSQL-specific feature)
         if session.bind.dialect.name == "sqlite":
             pytest.skip("PostgreSQL-specific test")
-            
+
         from sqlalchemy import text
+
         result = session.execute(
-            text("SELECT indexname FROM pg_indexes "
-            "WHERE tablename = 'tickets' AND indexname LIKE '%embedding%'")
+            text(
+                "SELECT indexname FROM pg_indexes "
+                "WHERE tablename = 'tickets' AND indexname LIKE '%embedding%'"
+            )
         )
         # Should have an index on embedding column
         assert result.fetchone() is not None

@@ -30,7 +30,11 @@ class NLPService:
 
         # --- Intent via zero-shot model ---
         intent_result = self.intent_pipe(
-            norm_text, candidate_labels=INTENT_LABELS, multi_label=False
+            norm_text,
+            candidate_labels=INTENT_LABELS,
+            multi_label=False,
+            truncation=True,
+            max_length=512,
         )
         model_intent = intent_result["labels"][0]
         model_intent_score = float(intent_result["scores"][0])
@@ -42,7 +46,9 @@ class NLPService:
             near_tie = delta < settings.near_tie_delta
 
         # --- Sentiment ---
-        s = self.sentiment_pipe(norm_text)[0]  # e.g. {'label': 'NEGATIVE', 'score': 0.98}
+        s = self.sentiment_pipe(norm_text, truncation=True, max_length=512)[
+            0
+        ]  # e.g. {'label': 'NEGATIVE', 'score': 0.98}
         sentiment_label_raw = str(s["label"]).lower()
         # normalize common HF outputs to our schema
         sentiment_label = (

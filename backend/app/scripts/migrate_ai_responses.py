@@ -19,9 +19,7 @@ def migrate():
 
     with engine.begin() as conn:
         # Create ai_responses table
-        conn.execute(
-            text(
-                """
+        conn.execute(text("""
             CREATE TABLE IF NOT EXISTS ai_responses (
                 id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
                 ticket_id UUID NOT NULL REFERENCES tickets(id) ON DELETE CASCADE,
@@ -35,37 +33,23 @@ def migrate():
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
-        """
-            )
-        )
+        """))
 
         # Create indexes
-        conn.execute(
-            text(
-                """
+        conn.execute(text("""
             CREATE INDEX IF NOT EXISTS idx_ai_responses_ticket_id 
             ON ai_responses(ticket_id);
-        """
-            )
-        )
+        """))
 
-        conn.execute(
-            text(
-                """
+        conn.execute(text("""
             CREATE INDEX IF NOT EXISTS idx_ai_responses_agent_id 
             ON ai_responses(agent_id);
-        """
-            )
-        )
+        """))
 
-        conn.execute(
-            text(
-                """
+        conn.execute(text("""
             CREATE INDEX IF NOT EXISTS idx_ai_responses_created_at 
             ON ai_responses(created_at DESC);
-        """
-            )
-        )
+        """))
 
         print("✅ ai_responses table created successfully")
 

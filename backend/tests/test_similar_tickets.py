@@ -12,11 +12,6 @@ Tests cover:
 from uuid import uuid4
 
 import pytest
-from fastapi.testclient import TestClient
-
-from app.main import app
-
-
 
 
 class TestSimilarTicketsEndpoint:
@@ -219,10 +214,7 @@ class TestSimilarTicketsParameters:
         ticket_id = ticket_with_many_similar["id"]
 
         r = client.get(f"/tickets/{ticket_id}/similar?limit=100")
-        data = r.json()
-
-        # Should return at most 20 results (max limit)
-        assert len(data["similar_tickets"]) <= 20
+        assert r.status_code == 422
 
     def test_limit_parameter_invalid(self, client, ticket_with_many_similar):
         """Invalid limit should be rejected or handled gracefully"""

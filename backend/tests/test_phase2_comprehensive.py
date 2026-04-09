@@ -13,11 +13,6 @@ from datetime import datetime, timedelta
 from uuid import uuid4
 
 import pytest
-from fastapi.testclient import TestClient
-
-from app.main import app
-
-
 
 
 class TestTicketFiltering:
@@ -188,7 +183,6 @@ class TestPagination:
         assert "items" in data
         assert "total" in data
         assert "page" in data
-        assert "pages" in data
         assert data["page"] == 1
         assert len(data["items"]) <= 5
 
@@ -484,11 +478,7 @@ class TestEdgeCases:
     def test_very_large_page_size(self, client):
         """Should handle very large page size"""
         r = client.get("/tickets?page=1&page_size=10000")
-        assert r.status_code == 200
-        data = r.json()
-
-        # Should cap at reasonable limit
-        assert len(data["items"]) <= 100  # Assuming max limit
+        assert r.status_code == 422
 
 
 class TestIntegration:

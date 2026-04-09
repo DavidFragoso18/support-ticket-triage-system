@@ -1,0 +1,658 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.11.14, pytest-8.2.1, pluggy-1.6.0
+rootdir: /Users/davidfragoso/Documents/Projetos/support-ticket-triage-system/backend
+configfile: pyproject.toml
+plugins: asyncio-1.3.0, anyio-4.13.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 204 items
+
+tests/test_ai_responses.py ......................                        [ 10%]
+tests/test_analytics.py .............................................    [ 32%]
+tests/test_embeddings.py .....................                           [ 43%]
+tests/test_llm_service.py ................                               [ 50%]
+tests/test_phase2_comprehensive.py .................................     [ 67%]
+tests/test_search.py .................ss                                 [ 76%]
+tests/test_similar_tickets.py .........F........                         [ 85%]
+tests/test_smoke.py ...                                                  [ 86%]
+tests/test_ticket_creation.py .................F.                        [ 96%]
+tests/test_websocket.py ....FFFF                                         [100%]
+
+=================================== FAILURES ===================================
+____________ TestSimilarTicketsParameters.test_limit_parameter_max _____________
+tests/test_similar_tickets.py:220: in test_limit_parameter_max
+    assert len(data["similar_tickets"]) <= 20
+E   KeyError: 'similar_tickets'
+---------------------------- Captured stdout setup -----------------------------
+Encoding text...
+Encoding done.
+---------------------------- Captured stderr setup -----------------------------
+INFO:app.services.websocket_manager:✅ Redis connected for WebSocket pub/sub
+INFO:embeddings:Encoding text...
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|██████████| 1/1 [00:00<00:00, 153.31it/s]
+INFO:embeddings:Encoding done.
+INFO:app.services.websocket_manager:📢 Broadcasting ticket update: ticket_created
+INFO:app.services.websocket_manager:📤 Sending to 0 connections
+INFO:httpx:HTTP Request: POST http://testserver/tickets "HTTP/1.1 201 Created"
+------------------------------ Captured log setup ------------------------------
+INFO     app.services.websocket_manager:websocket_manager.py:34 ✅ Redis connected for WebSocket pub/sub
+INFO     embeddings:embeddings.py:22 Encoding text...
+INFO     embeddings:embeddings.py:26 Encoding done.
+INFO     app.services.websocket_manager:websocket_manager.py:108 📢 Broadcasting ticket update: ticket_created
+INFO     app.services.websocket_manager:websocket_manager.py:117 📤 Sending to 0 connections
+INFO     httpx:_client.py:1026 HTTP Request: POST http://testserver/tickets "HTTP/1.1 201 Created"
+----------------------------- Captured stderr call -----------------------------
+INFO:httpx:HTTP Request: GET http://testserver/tickets/d9b4de62-c7da-4384-aa3f-16e282cea92a/similar?limit=100 "HTTP/1.1 422 Unprocessable Entity"
+------------------------------ Captured log call -------------------------------
+INFO     httpx:_client.py:1026 HTTP Request: GET http://testserver/tickets/d9b4de62-c7da-4384-aa3f-16e282cea92a/similar?limit=100 "HTTP/1.1 422 Unprocessable Entity"
+--------------------------- Captured stderr teardown ---------------------------
+INFO:app.services.websocket_manager:Redis connection closed
+---------------------------- Captured log teardown -----------------------------
+INFO     app.services.websocket_manager:websocket_manager.py:43 Redis connection closed
+_____________ TestTicketEdgeCases.test_ticket_with_very_long_body ______________
+tests/test_ticket_creation.py:374: in test_ticket_with_very_long_body
+    assert r.status_code == 201
+E   assert 500 == 201
+E    +  where 500 = <Response [500 Internal Server Error]>.status_code
+---------------------------- Captured stderr setup -----------------------------
+INFO:app.services.websocket_manager:✅ Redis connected for WebSocket pub/sub
+------------------------------ Captured log setup ------------------------------
+INFO     app.services.websocket_manager:websocket_manager.py:34 ✅ Redis connected for WebSocket pub/sub
+----------------------------- Captured stderr call -----------------------------
+ERROR:app.core.errors:CREATE_TICKET_FAILED
+Traceback (most recent call last):
+  File "/Users/davidfragoso/Documents/Projetos/support-ticket-triage-system/backend/app/api/routes/tickets.py", line 35, in create_ticket
+    intent, intent_score, sentiment, sentiment_score, low = nlp.classify_text(text)
+                                                            ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/davidfragoso/Documents/Projetos/support-ticket-triage-system/backend/app/nlp/pipeline.py", line 45, in classify_text
+    s = self.sentiment_pipe(norm_text)[0]  # e.g. {'label': 'NEGATIVE', 'score': 0.98}
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/davidfragoso/Documents/Projetos/support-ticket-triage-system/backend/.venv/lib/python3.11/site-packages/transformers/pipelines/text_classification.py", line 156, in __call__
+    result = super().__call__(*inputs, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/davidfragoso/Documents/Projetos/support-ticket-triage-system/backend/.venv/lib/python3.11/site-packages/transformers/pipelines/base.py", line 1257, in __call__
+    return self.run_single(inputs, preprocess_params, forward_params, postprocess_params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/davidfragoso/Documents/Projetos/support-ticket-triage-system/backend/.venv/lib/python3.11/site-packages/transformers/pipelines/base.py", line 1264, in run_single
+    model_outputs = self.forward(model_inputs, **forward_params)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/davidfragoso/Documents/Projetos/support-ticket-triage-system/backend/.venv/lib/python3.11/site-packages/transformers/pipelines/base.py", line 1164, in forward
+    model_outputs = self._forward(model_inputs, **forward_params)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/davidfragoso/Documents/Projetos/support-ticket-triage-system/backend/.venv/lib/python3.11/site-packages/transformers/pipelines/text_classification.py", line 187, in _forward
+    return self.model(**model_inputs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/davidfragoso/Documents/Projetos/support-ticket-triage-system/backend/.venv/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1739, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/davidfragoso/Documents/Projetos/support-ticket-triage-system/backend/.venv/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1750, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/davidfragoso/Documents/Projetos/support-ticket-triage-system/backend/.venv/lib/python3.11/site-packages/transformers/models/roberta/modeling_roberta.py", line 1195, in forward
+    outputs = self.roberta(
+              ^^^^^^^^^^^^^
+  File "/Users/davidfragoso/Documents/Projetos/support-ticket-triage-system/backend/.venv/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1739, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/davidfragoso/Documents/Projetos/support-ticket-triage-system/backend/.venv/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1750, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/davidfragoso/Documents/Projetos/support-ticket-triage-system/backend/.venv/lib/python3.11/site-packages/transformers/models/roberta/modeling_roberta.py", line 798, in forward
+    buffered_token_type_ids_expanded = buffered_token_type_ids.expand(batch_size, seq_length)
+                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: The expanded size of the tensor (705) must match the existing size (514) at non-singleton dimension 1.  Target sizes: [1, 705].  Tensor sizes: [1, 514]
+INFO:httpx:HTTP Request: POST http://testserver/tickets "HTTP/1.1 500 Internal Server Error"
+------------------------------ Captured log call -------------------------------
+ERROR    app.core.errors:tickets.py:114 CREATE_TICKET_FAILED
+Traceback (most recent call last):
+  File "/Users/davidfragoso/Documents/Projetos/support-ticket-triage-system/backend/app/api/routes/tickets.py", line 35, in create_ticket
+    intent, intent_score, sentiment, sentiment_score, low = nlp.classify_text(text)
+                                                            ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/davidfragoso/Documents/Projetos/support-ticket-triage-system/backend/app/nlp/pipeline.py", line 45, in classify_text
+    s = self.sentiment_pipe(norm_text)[0]  # e.g. {'label': 'NEGATIVE', 'score': 0.98}
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/davidfragoso/Documents/Projetos/support-ticket-triage-system/backend/.venv/lib/python3.11/site-packages/transformers/pipelines/text_classification.py", line 156, in __call__
+    result = super().__call__(*inputs, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/davidfragoso/Documents/Projetos/support-ticket-triage-system/backend/.venv/lib/python3.11/site-packages/transformers/pipelines/base.py", line 1257, in __call__
+    return self.run_single(inputs, preprocess_params, forward_params, postprocess_params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/davidfragoso/Documents/Projetos/support-ticket-triage-system/backend/.venv/lib/python3.11/site-packages/transformers/pipelines/base.py", line 1264, in run_single
+    model_outputs = self.forward(model_inputs, **forward_params)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/davidfragoso/Documents/Projetos/support-ticket-triage-system/backend/.venv/lib/python3.11/site-packages/transformers/pipelines/base.py", line 1164, in forward
+    model_outputs = self._forward(model_inputs, **forward_params)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/davidfragoso/Documents/Projetos/support-ticket-triage-system/backend/.venv/lib/python3.11/site-packages/transformers/pipelines/text_classification.py", line 187, in _forward
+    return self.model(**model_inputs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/davidfragoso/Documents/Projetos/support-ticket-triage-system/backend/.venv/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1739, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/davidfragoso/Documents/Projetos/support-ticket-triage-system/backend/.venv/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1750, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/davidfragoso/Documents/Projetos/support-ticket-triage-system/backend/.venv/lib/python3.11/site-packages/transformers/models/roberta/modeling_roberta.py", line 1195, in forward
+    outputs = self.roberta(
+              ^^^^^^^^^^^^^
+  File "/Users/davidfragoso/Documents/Projetos/support-ticket-triage-system/backend/.venv/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1739, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/davidfragoso/Documents/Projetos/support-ticket-triage-system/backend/.venv/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1750, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/davidfragoso/Documents/Projetos/support-ticket-triage-system/backend/.venv/lib/python3.11/site-packages/transformers/models/roberta/modeling_roberta.py", line 798, in forward
+    buffered_token_type_ids_expanded = buffered_token_type_ids.expand(batch_size, seq_length)
+                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: The expanded size of the tensor (705) must match the existing size (514) at non-singleton dimension 1.  Target sizes: [1, 705].  Tensor sizes: [1, 514]
+INFO     httpx:_client.py:1026 HTTP Request: POST http://testserver/tickets "HTTP/1.1 500 Internal Server Error"
+--------------------------- Captured stderr teardown ---------------------------
+INFO:app.services.websocket_manager:Redis connection closed
+---------------------------- Captured log teardown -----------------------------
+INFO     app.services.websocket_manager:websocket_manager.py:43 Redis connection closed
+__________________________ test_ticket_claim_endpoint __________________________
+.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py:1815: in _execute_context
+    context = constructor(
+.venv/lib/python3.11/site-packages/sqlalchemy/engine/default.py:1494: in _init_compiled
+    l_param: List[Any] = [
+.venv/lib/python3.11/site-packages/sqlalchemy/engine/default.py:1496: in <listcomp>
+    flattened_processors[key](compiled_params[key])
+.venv/lib/python3.11/site-packages/sqlalchemy/sql/sqltypes.py:3734: in process
+    value = value.hex
+E   AttributeError: 'str' object has no attribute 'hex'
+
+The above exception was the direct cause of the following exception:
+tests/test_websocket.py:63: in test_ticket_claim_endpoint
+    claim_response = client.post(f"/tickets/{ticket_id}/claim", params={"agent_id": "agent-456"})
+.venv/lib/python3.11/site-packages/starlette/testclient.py:597: in post
+    return super().post(
+.venv/lib/python3.11/site-packages/httpx/_client.py:1145: in post
+    return self.request(
+.venv/lib/python3.11/site-packages/starlette/testclient.py:488: in request
+    return super().request(
+.venv/lib/python3.11/site-packages/httpx/_client.py:827: in request
+    return self.send(request, auth=auth, follow_redirects=follow_redirects)
+.venv/lib/python3.11/site-packages/httpx/_client.py:914: in send
+    response = self._send_handling_auth(
+.venv/lib/python3.11/site-packages/httpx/_client.py:942: in _send_handling_auth
+    response = self._send_handling_redirects(
+.venv/lib/python3.11/site-packages/httpx/_client.py:979: in _send_handling_redirects
+    response = self._send_single_request(request)
+.venv/lib/python3.11/site-packages/httpx/_client.py:1015: in _send_single_request
+    response = transport.handle_request(request)
+.venv/lib/python3.11/site-packages/starlette/testclient.py:381: in handle_request
+    raise exc
+.venv/lib/python3.11/site-packages/starlette/testclient.py:378: in handle_request
+    portal.call(self.app, scope, receive, send)
+.venv/lib/python3.11/site-packages/anyio/from_thread.py:334: in call
+    return cast(T_Retval, self.start_task_soon(func, *args).result())
+/opt/homebrew/Cellar/python@3.11/3.11.14_1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/concurrent/futures/_base.py:456: in result
+    return self.__get_result()
+/opt/homebrew/Cellar/python@3.11/3.11.14_1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/concurrent/futures/_base.py:401: in __get_result
+    raise self._exception
+.venv/lib/python3.11/site-packages/anyio/from_thread.py:259: in _call_func
+    retval = await retval_or_awaitable
+.venv/lib/python3.11/site-packages/fastapi/applications.py:1054: in __call__
+    await super().__call__(scope, receive, send)
+.venv/lib/python3.11/site-packages/starlette/applications.py:113: in __call__
+    await self.middleware_stack(scope, receive, send)
+.venv/lib/python3.11/site-packages/starlette/middleware/errors.py:187: in __call__
+    raise exc
+.venv/lib/python3.11/site-packages/starlette/middleware/errors.py:165: in __call__
+    await self.app(scope, receive, _send)
+.venv/lib/python3.11/site-packages/starlette/middleware/cors.py:85: in __call__
+    await self.app(scope, receive, send)
+.venv/lib/python3.11/site-packages/starlette/middleware/exceptions.py:62: in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+.venv/lib/python3.11/site-packages/starlette/_exception_handler.py:62: in wrapped_app
+    raise exc
+.venv/lib/python3.11/site-packages/starlette/_exception_handler.py:51: in wrapped_app
+    await app(scope, receive, sender)
+.venv/lib/python3.11/site-packages/starlette/routing.py:715: in __call__
+    await self.middleware_stack(scope, receive, send)
+.venv/lib/python3.11/site-packages/starlette/routing.py:735: in app
+    await route.handle(scope, receive, send)
+.venv/lib/python3.11/site-packages/starlette/routing.py:288: in handle
+    await self.app(scope, receive, send)
+.venv/lib/python3.11/site-packages/starlette/routing.py:76: in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+.venv/lib/python3.11/site-packages/starlette/_exception_handler.py:62: in wrapped_app
+    raise exc
+.venv/lib/python3.11/site-packages/starlette/_exception_handler.py:51: in wrapped_app
+    await app(scope, receive, sender)
+.venv/lib/python3.11/site-packages/starlette/routing.py:73: in app
+    response = await f(request)
+.venv/lib/python3.11/site-packages/fastapi/routing.py:301: in app
+    raw_response = await run_endpoint_function(
+.venv/lib/python3.11/site-packages/fastapi/routing.py:212: in run_endpoint_function
+    return await dependant.call(**values)
+app/api/routes/websocket.py:85: in claim_ticket
+    ticket = session.exec(statement).first()
+.venv/lib/python3.11/site-packages/sqlmodel/orm/session.py:66: in exec
+    results = super().execute(
+.venv/lib/python3.11/site-packages/sqlalchemy/orm/session.py:2351: in execute
+    return self._execute_internal(
+.venv/lib/python3.11/site-packages/sqlalchemy/orm/session.py:2249: in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+.venv/lib/python3.11/site-packages/sqlalchemy/orm/context.py:306: in orm_execute_statement
+    result = conn.execute(
+.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py:1419: in execute
+    return meth(
+.venv/lib/python3.11/site-packages/sqlalchemy/sql/elements.py:527: in _execute_on_connection
+    return connection._execute_clauseelement(
+.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py:1641: in _execute_clauseelement
+    ret = self._execute_context(
+.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py:1821: in _execute_context
+    self._handle_dbapi_exception(
+.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py:2363: in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py:1815: in _execute_context
+    context = constructor(
+.venv/lib/python3.11/site-packages/sqlalchemy/engine/default.py:1494: in _init_compiled
+    l_param: List[Any] = [
+.venv/lib/python3.11/site-packages/sqlalchemy/engine/default.py:1496: in <listcomp>
+    flattened_processors[key](compiled_params[key])
+.venv/lib/python3.11/site-packages/sqlalchemy/sql/sqltypes.py:3734: in process
+    value = value.hex
+E   sqlalchemy.exc.StatementError: (builtins.AttributeError) 'str' object has no attribute 'hex'
+E   [SQL: SELECT tickets.id, tickets.subject, tickets.body, tickets.channel, tickets.customer_id, tickets.language, tickets.status, tickets.assigned_agent_id, tickets.created_at, tickets.updated_at 
+E   FROM tickets 
+E   WHERE tickets.id = ?]
+E   [parameters: [{}]]
+---------------------------- Captured stderr setup -----------------------------
+INFO:app.services.websocket_manager:✅ Redis connected for WebSocket pub/sub
+------------------------------ Captured log setup ------------------------------
+INFO     app.services.websocket_manager:websocket_manager.py:34 ✅ Redis connected for WebSocket pub/sub
+----------------------------- Captured stdout call -----------------------------
+Encoding text...
+Encoding done.
+----------------------------- Captured stderr call -----------------------------
+INFO:embeddings:Encoding text...
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|██████████| 1/1 [00:00<00:00, 127.39it/s]
+INFO:embeddings:Encoding done.
+INFO:app.services.websocket_manager:📢 Broadcasting ticket update: ticket_created
+INFO:app.services.websocket_manager:📤 Sending to 0 connections
+INFO:httpx:HTTP Request: POST http://testserver/tickets "HTTP/1.1 201 Created"
+------------------------------ Captured log call -------------------------------
+INFO     embeddings:embeddings.py:22 Encoding text...
+INFO     embeddings:embeddings.py:26 Encoding done.
+INFO     app.services.websocket_manager:websocket_manager.py:108 📢 Broadcasting ticket update: ticket_created
+INFO     app.services.websocket_manager:websocket_manager.py:117 📤 Sending to 0 connections
+INFO     httpx:_client.py:1026 HTTP Request: POST http://testserver/tickets "HTTP/1.1 201 Created"
+--------------------------- Captured stderr teardown ---------------------------
+INFO:app.services.websocket_manager:Redis connection closed
+---------------------------- Captured log teardown -----------------------------
+INFO     app.services.websocket_manager:websocket_manager.py:43 Redis connection closed
+_________________________ test_ticket_release_endpoint _________________________
+.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py:1815: in _execute_context
+    context = constructor(
+.venv/lib/python3.11/site-packages/sqlalchemy/engine/default.py:1494: in _init_compiled
+    l_param: List[Any] = [
+.venv/lib/python3.11/site-packages/sqlalchemy/engine/default.py:1496: in <listcomp>
+    flattened_processors[key](compiled_params[key])
+.venv/lib/python3.11/site-packages/sqlalchemy/sql/sqltypes.py:3734: in process
+    value = value.hex
+E   AttributeError: 'str' object has no attribute 'hex'
+
+The above exception was the direct cause of the following exception:
+tests/test_websocket.py:84: in test_ticket_release_endpoint
+    client.post(f"/tickets/{ticket_id}/claim", params={"agent_id": "agent-999"})
+.venv/lib/python3.11/site-packages/starlette/testclient.py:597: in post
+    return super().post(
+.venv/lib/python3.11/site-packages/httpx/_client.py:1145: in post
+    return self.request(
+.venv/lib/python3.11/site-packages/starlette/testclient.py:488: in request
+    return super().request(
+.venv/lib/python3.11/site-packages/httpx/_client.py:827: in request
+    return self.send(request, auth=auth, follow_redirects=follow_redirects)
+.venv/lib/python3.11/site-packages/httpx/_client.py:914: in send
+    response = self._send_handling_auth(
+.venv/lib/python3.11/site-packages/httpx/_client.py:942: in _send_handling_auth
+    response = self._send_handling_redirects(
+.venv/lib/python3.11/site-packages/httpx/_client.py:979: in _send_handling_redirects
+    response = self._send_single_request(request)
+.venv/lib/python3.11/site-packages/httpx/_client.py:1015: in _send_single_request
+    response = transport.handle_request(request)
+.venv/lib/python3.11/site-packages/starlette/testclient.py:381: in handle_request
+    raise exc
+.venv/lib/python3.11/site-packages/starlette/testclient.py:378: in handle_request
+    portal.call(self.app, scope, receive, send)
+.venv/lib/python3.11/site-packages/anyio/from_thread.py:334: in call
+    return cast(T_Retval, self.start_task_soon(func, *args).result())
+/opt/homebrew/Cellar/python@3.11/3.11.14_1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/concurrent/futures/_base.py:456: in result
+    return self.__get_result()
+/opt/homebrew/Cellar/python@3.11/3.11.14_1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/concurrent/futures/_base.py:401: in __get_result
+    raise self._exception
+.venv/lib/python3.11/site-packages/anyio/from_thread.py:259: in _call_func
+    retval = await retval_or_awaitable
+.venv/lib/python3.11/site-packages/fastapi/applications.py:1054: in __call__
+    await super().__call__(scope, receive, send)
+.venv/lib/python3.11/site-packages/starlette/applications.py:113: in __call__
+    await self.middleware_stack(scope, receive, send)
+.venv/lib/python3.11/site-packages/starlette/middleware/errors.py:187: in __call__
+    raise exc
+.venv/lib/python3.11/site-packages/starlette/middleware/errors.py:165: in __call__
+    await self.app(scope, receive, _send)
+.venv/lib/python3.11/site-packages/starlette/middleware/cors.py:85: in __call__
+    await self.app(scope, receive, send)
+.venv/lib/python3.11/site-packages/starlette/middleware/exceptions.py:62: in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+.venv/lib/python3.11/site-packages/starlette/_exception_handler.py:62: in wrapped_app
+    raise exc
+.venv/lib/python3.11/site-packages/starlette/_exception_handler.py:51: in wrapped_app
+    await app(scope, receive, sender)
+.venv/lib/python3.11/site-packages/starlette/routing.py:715: in __call__
+    await self.middleware_stack(scope, receive, send)
+.venv/lib/python3.11/site-packages/starlette/routing.py:735: in app
+    await route.handle(scope, receive, send)
+.venv/lib/python3.11/site-packages/starlette/routing.py:288: in handle
+    await self.app(scope, receive, send)
+.venv/lib/python3.11/site-packages/starlette/routing.py:76: in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+.venv/lib/python3.11/site-packages/starlette/_exception_handler.py:62: in wrapped_app
+    raise exc
+.venv/lib/python3.11/site-packages/starlette/_exception_handler.py:51: in wrapped_app
+    await app(scope, receive, sender)
+.venv/lib/python3.11/site-packages/starlette/routing.py:73: in app
+    response = await f(request)
+.venv/lib/python3.11/site-packages/fastapi/routing.py:301: in app
+    raw_response = await run_endpoint_function(
+.venv/lib/python3.11/site-packages/fastapi/routing.py:212: in run_endpoint_function
+    return await dependant.call(**values)
+app/api/routes/websocket.py:85: in claim_ticket
+    ticket = session.exec(statement).first()
+.venv/lib/python3.11/site-packages/sqlmodel/orm/session.py:66: in exec
+    results = super().execute(
+.venv/lib/python3.11/site-packages/sqlalchemy/orm/session.py:2351: in execute
+    return self._execute_internal(
+.venv/lib/python3.11/site-packages/sqlalchemy/orm/session.py:2249: in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+.venv/lib/python3.11/site-packages/sqlalchemy/orm/context.py:306: in orm_execute_statement
+    result = conn.execute(
+.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py:1419: in execute
+    return meth(
+.venv/lib/python3.11/site-packages/sqlalchemy/sql/elements.py:527: in _execute_on_connection
+    return connection._execute_clauseelement(
+.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py:1641: in _execute_clauseelement
+    ret = self._execute_context(
+.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py:1821: in _execute_context
+    self._handle_dbapi_exception(
+.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py:2363: in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py:1815: in _execute_context
+    context = constructor(
+.venv/lib/python3.11/site-packages/sqlalchemy/engine/default.py:1494: in _init_compiled
+    l_param: List[Any] = [
+.venv/lib/python3.11/site-packages/sqlalchemy/engine/default.py:1496: in <listcomp>
+    flattened_processors[key](compiled_params[key])
+.venv/lib/python3.11/site-packages/sqlalchemy/sql/sqltypes.py:3734: in process
+    value = value.hex
+E   sqlalchemy.exc.StatementError: (builtins.AttributeError) 'str' object has no attribute 'hex'
+E   [SQL: SELECT tickets.id, tickets.subject, tickets.body, tickets.channel, tickets.customer_id, tickets.language, tickets.status, tickets.assigned_agent_id, tickets.created_at, tickets.updated_at 
+E   FROM tickets 
+E   WHERE tickets.id = ?]
+E   [parameters: [{}]]
+---------------------------- Captured stderr setup -----------------------------
+INFO:app.services.websocket_manager:✅ Redis connected for WebSocket pub/sub
+------------------------------ Captured log setup ------------------------------
+INFO     app.services.websocket_manager:websocket_manager.py:34 ✅ Redis connected for WebSocket pub/sub
+----------------------------- Captured stdout call -----------------------------
+Encoding text...
+Encoding done.
+----------------------------- Captured stderr call -----------------------------
+INFO:embeddings:Encoding text...
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|██████████| 1/1 [00:00<00:00, 132.59it/s]
+INFO:embeddings:Encoding done.
+INFO:app.services.websocket_manager:📢 Broadcasting ticket update: ticket_created
+INFO:app.services.websocket_manager:📤 Sending to 0 connections
+INFO:httpx:HTTP Request: POST http://testserver/tickets "HTTP/1.1 201 Created"
+------------------------------ Captured log call -------------------------------
+INFO     embeddings:embeddings.py:22 Encoding text...
+INFO     embeddings:embeddings.py:26 Encoding done.
+INFO     app.services.websocket_manager:websocket_manager.py:108 📢 Broadcasting ticket update: ticket_created
+INFO     app.services.websocket_manager:websocket_manager.py:117 📤 Sending to 0 connections
+INFO     httpx:_client.py:1026 HTTP Request: POST http://testserver/tickets "HTTP/1.1 201 Created"
+--------------------------- Captured stderr teardown ---------------------------
+INFO:app.services.websocket_manager:Redis connection closed
+---------------------------- Captured log teardown -----------------------------
+INFO     app.services.websocket_manager:websocket_manager.py:43 Redis connection closed
+__________________________ test_ticket_claim_conflict __________________________
+.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py:1815: in _execute_context
+    context = constructor(
+.venv/lib/python3.11/site-packages/sqlalchemy/engine/default.py:1494: in _init_compiled
+    l_param: List[Any] = [
+.venv/lib/python3.11/site-packages/sqlalchemy/engine/default.py:1496: in <listcomp>
+    flattened_processors[key](compiled_params[key])
+.venv/lib/python3.11/site-packages/sqlalchemy/sql/sqltypes.py:3734: in process
+    value = value.hex
+E   AttributeError: 'str' object has no attribute 'hex'
+
+The above exception was the direct cause of the following exception:
+tests/test_websocket.py:108: in test_ticket_claim_conflict
+    client.post(f"/tickets/{ticket_id}/claim", params={"agent_id": "agent-1"})
+.venv/lib/python3.11/site-packages/starlette/testclient.py:597: in post
+    return super().post(
+.venv/lib/python3.11/site-packages/httpx/_client.py:1145: in post
+    return self.request(
+.venv/lib/python3.11/site-packages/starlette/testclient.py:488: in request
+    return super().request(
+.venv/lib/python3.11/site-packages/httpx/_client.py:827: in request
+    return self.send(request, auth=auth, follow_redirects=follow_redirects)
+.venv/lib/python3.11/site-packages/httpx/_client.py:914: in send
+    response = self._send_handling_auth(
+.venv/lib/python3.11/site-packages/httpx/_client.py:942: in _send_handling_auth
+    response = self._send_handling_redirects(
+.venv/lib/python3.11/site-packages/httpx/_client.py:979: in _send_handling_redirects
+    response = self._send_single_request(request)
+.venv/lib/python3.11/site-packages/httpx/_client.py:1015: in _send_single_request
+    response = transport.handle_request(request)
+.venv/lib/python3.11/site-packages/starlette/testclient.py:381: in handle_request
+    raise exc
+.venv/lib/python3.11/site-packages/starlette/testclient.py:378: in handle_request
+    portal.call(self.app, scope, receive, send)
+.venv/lib/python3.11/site-packages/anyio/from_thread.py:334: in call
+    return cast(T_Retval, self.start_task_soon(func, *args).result())
+/opt/homebrew/Cellar/python@3.11/3.11.14_1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/concurrent/futures/_base.py:456: in result
+    return self.__get_result()
+/opt/homebrew/Cellar/python@3.11/3.11.14_1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/concurrent/futures/_base.py:401: in __get_result
+    raise self._exception
+.venv/lib/python3.11/site-packages/anyio/from_thread.py:259: in _call_func
+    retval = await retval_or_awaitable
+.venv/lib/python3.11/site-packages/fastapi/applications.py:1054: in __call__
+    await super().__call__(scope, receive, send)
+.venv/lib/python3.11/site-packages/starlette/applications.py:113: in __call__
+    await self.middleware_stack(scope, receive, send)
+.venv/lib/python3.11/site-packages/starlette/middleware/errors.py:187: in __call__
+    raise exc
+.venv/lib/python3.11/site-packages/starlette/middleware/errors.py:165: in __call__
+    await self.app(scope, receive, _send)
+.venv/lib/python3.11/site-packages/starlette/middleware/cors.py:85: in __call__
+    await self.app(scope, receive, send)
+.venv/lib/python3.11/site-packages/starlette/middleware/exceptions.py:62: in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+.venv/lib/python3.11/site-packages/starlette/_exception_handler.py:62: in wrapped_app
+    raise exc
+.venv/lib/python3.11/site-packages/starlette/_exception_handler.py:51: in wrapped_app
+    await app(scope, receive, sender)
+.venv/lib/python3.11/site-packages/starlette/routing.py:715: in __call__
+    await self.middleware_stack(scope, receive, send)
+.venv/lib/python3.11/site-packages/starlette/routing.py:735: in app
+    await route.handle(scope, receive, send)
+.venv/lib/python3.11/site-packages/starlette/routing.py:288: in handle
+    await self.app(scope, receive, send)
+.venv/lib/python3.11/site-packages/starlette/routing.py:76: in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+.venv/lib/python3.11/site-packages/starlette/_exception_handler.py:62: in wrapped_app
+    raise exc
+.venv/lib/python3.11/site-packages/starlette/_exception_handler.py:51: in wrapped_app
+    await app(scope, receive, sender)
+.venv/lib/python3.11/site-packages/starlette/routing.py:73: in app
+    response = await f(request)
+.venv/lib/python3.11/site-packages/fastapi/routing.py:301: in app
+    raw_response = await run_endpoint_function(
+.venv/lib/python3.11/site-packages/fastapi/routing.py:212: in run_endpoint_function
+    return await dependant.call(**values)
+app/api/routes/websocket.py:85: in claim_ticket
+    ticket = session.exec(statement).first()
+.venv/lib/python3.11/site-packages/sqlmodel/orm/session.py:66: in exec
+    results = super().execute(
+.venv/lib/python3.11/site-packages/sqlalchemy/orm/session.py:2351: in execute
+    return self._execute_internal(
+.venv/lib/python3.11/site-packages/sqlalchemy/orm/session.py:2249: in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+.venv/lib/python3.11/site-packages/sqlalchemy/orm/context.py:306: in orm_execute_statement
+    result = conn.execute(
+.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py:1419: in execute
+    return meth(
+.venv/lib/python3.11/site-packages/sqlalchemy/sql/elements.py:527: in _execute_on_connection
+    return connection._execute_clauseelement(
+.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py:1641: in _execute_clauseelement
+    ret = self._execute_context(
+.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py:1821: in _execute_context
+    self._handle_dbapi_exception(
+.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py:2363: in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py:1815: in _execute_context
+    context = constructor(
+.venv/lib/python3.11/site-packages/sqlalchemy/engine/default.py:1494: in _init_compiled
+    l_param: List[Any] = [
+.venv/lib/python3.11/site-packages/sqlalchemy/engine/default.py:1496: in <listcomp>
+    flattened_processors[key](compiled_params[key])
+.venv/lib/python3.11/site-packages/sqlalchemy/sql/sqltypes.py:3734: in process
+    value = value.hex
+E   sqlalchemy.exc.StatementError: (builtins.AttributeError) 'str' object has no attribute 'hex'
+E   [SQL: SELECT tickets.id, tickets.subject, tickets.body, tickets.channel, tickets.customer_id, tickets.language, tickets.status, tickets.assigned_agent_id, tickets.created_at, tickets.updated_at 
+E   FROM tickets 
+E   WHERE tickets.id = ?]
+E   [parameters: [{}]]
+---------------------------- Captured stderr setup -----------------------------
+INFO:app.services.websocket_manager:✅ Redis connected for WebSocket pub/sub
+------------------------------ Captured log setup ------------------------------
+INFO     app.services.websocket_manager:websocket_manager.py:34 ✅ Redis connected for WebSocket pub/sub
+----------------------------- Captured stdout call -----------------------------
+Encoding text...
+Encoding done.
+----------------------------- Captured stderr call -----------------------------
+INFO:embeddings:Encoding text...
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|██████████| 1/1 [00:00<00:00, 125.71it/s]
+INFO:embeddings:Encoding done.
+INFO:app.services.websocket_manager:📢 Broadcasting ticket update: ticket_created
+INFO:app.services.websocket_manager:📤 Sending to 0 connections
+INFO:httpx:HTTP Request: POST http://testserver/tickets "HTTP/1.1 201 Created"
+------------------------------ Captured log call -------------------------------
+INFO     embeddings:embeddings.py:22 Encoding text...
+INFO     embeddings:embeddings.py:26 Encoding done.
+INFO     app.services.websocket_manager:websocket_manager.py:108 📢 Broadcasting ticket update: ticket_created
+INFO     app.services.websocket_manager:websocket_manager.py:117 📤 Sending to 0 connections
+INFO     httpx:_client.py:1026 HTTP Request: POST http://testserver/tickets "HTTP/1.1 201 Created"
+--------------------------- Captured stderr teardown ---------------------------
+INFO:app.services.websocket_manager:Redis connection closed
+---------------------------- Captured log teardown -----------------------------
+INFO     app.services.websocket_manager:websocket_manager.py:43 Redis connection closed
+_________________ test_websocket_receives_new_ticket_broadcast _________________
+tests/test_websocket.py:140: in test_websocket_receives_new_ticket_broadcast
+    websocket.settimeout(2.0)
+E   AttributeError: 'WebSocketTestSession' object has no attribute 'settimeout'
+---------------------------- Captured stderr setup -----------------------------
+INFO:app.services.websocket_manager:✅ Redis connected for WebSocket pub/sub
+------------------------------ Captured log setup ------------------------------
+INFO     app.services.websocket_manager:websocket_manager.py:34 ✅ Redis connected for WebSocket pub/sub
+----------------------------- Captured stderr call -----------------------------
+INFO:app.services.websocket_manager:✅ WebSocket connected: cb084e5b-4a56-4fee-bf12-92593c553f92 (agent: None)
+INFO:app.services.websocket_manager:📊 Active connections: 1
+INFO:app.services.websocket_manager:❌ WebSocket disconnected: cb084e5b-4a56-4fee-bf12-92593c553f92
+INFO:app.services.websocket_manager:📊 Active connections: 0
+INFO:app.api.routes.websocket:Client cb084e5b-4a56-4fee-bf12-92593c553f92 disconnected normally
+------------------------------ Captured log call -------------------------------
+INFO     app.services.websocket_manager:websocket_manager.py:58 ✅ WebSocket connected: cb084e5b-4a56-4fee-bf12-92593c553f92 (agent: None)
+INFO     app.services.websocket_manager:websocket_manager.py:59 📊 Active connections: 1
+INFO     app.services.websocket_manager:websocket_manager.py:72 ❌ WebSocket disconnected: cb084e5b-4a56-4fee-bf12-92593c553f92
+INFO     app.services.websocket_manager:websocket_manager.py:73 📊 Active connections: 0
+INFO     app.api.routes.websocket:websocket.py:69 Client cb084e5b-4a56-4fee-bf12-92593c553f92 disconnected normally
+--------------------------- Captured stderr teardown ---------------------------
+INFO:app.services.websocket_manager:Redis connection closed
+---------------------------- Captured log teardown -----------------------------
+INFO     app.services.websocket_manager:websocket_manager.py:43 Redis connection closed
+=============================== warnings summary ===============================
+.venv/lib/python3.11/site-packages/pydantic/_internal/_config.py:291
+  /Users/davidfragoso/Documents/Projetos/support-ticket-triage-system/backend/.venv/lib/python3.11/site-packages/pydantic/_internal/_config.py:291: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.8/migration/
+    warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
+
+.venv/lib/python3.11/site-packages/pydantic/_internal/_fields.py:161
+  /Users/davidfragoso/Documents/Projetos/support-ticket-triage-system/backend/.venv/lib/python3.11/site-packages/pydantic/_internal/_fields.py:161: UserWarning: Field "model_accuracy" has conflict with protected namespace "model_".
+  
+  You may be able to resolve this warning by setting `model_config['protected_namespaces'] = ()`.
+    warnings.warn(
+
+.venv/lib/python3.11/site-packages/sklearn/utils/fixes.py:19
+  /Users/davidfragoso/Documents/Projetos/support-ticket-triage-system/backend/.venv/lib/python3.11/site-packages/sklearn/utils/fixes.py:19: DeprecationWarning: 
+  Pyarrow will become a required dependency of pandas in the next major release of pandas (pandas 3.0),
+  (to allow more performant data types, such as the Arrow string type, and better interoperability with other libraries)
+  but was not found to be installed on your system.
+  If this would cause problems for you,
+  please provide us feedback at https://github.com/pandas-dev/pandas/issues/54466
+          
+    import pandas as pd
+
+.venv/lib/python3.11/site-packages/transformers/tokenization_utils_base.py:1601
+  /Users/davidfragoso/Documents/Projetos/support-ticket-triage-system/backend/.venv/lib/python3.11/site-packages/transformers/tokenization_utils_base.py:1601: FutureWarning: `clean_up_tokenization_spaces` was not set. It will be set to `True` by default. This behavior will be depracted in transformers v4.45, and will be then set to `False` by default. For more details check this issue: https://github.com/huggingface/transformers/issues/31884
+    warnings.warn(
+
+app/api/routes/llm.py:54
+  /Users/davidfragoso/Documents/Projetos/support-ticket-triage-system/backend/app/api/routes/llm.py:54: DeprecationWarning: `regex` has been deprecated, please use `pattern` instead
+    tone: str = Query(
+
+app/api/routes/search.py:135
+  /Users/davidfragoso/Documents/Projetos/support-ticket-triage-system/backend/app/api/routes/search.py:135: DeprecationWarning: `regex` has been deprecated, please use `pattern` instead
+    mode: str = Query(default="hybrid", regex="^(semantic|keyword|hybrid)$"),
+
+app/main.py:32
+  /Users/davidfragoso/Documents/Projetos/support-ticket-triage-system/backend/app/main.py:32: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    @app.on_event("startup")
+
+.venv/lib/python3.11/site-packages/fastapi/applications.py:4495
+.venv/lib/python3.11/site-packages/fastapi/applications.py:4495
+  /Users/davidfragoso/Documents/Projetos/support-ticket-triage-system/backend/.venv/lib/python3.11/site-packages/fastapi/applications.py:4495: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    return self.router.on_event(event_type)
+
+app/main.py:41
+  /Users/davidfragoso/Documents/Projetos/support-ticket-triage-system/backend/app/main.py:41: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    @app.on_event("shutdown")
+
+tests/test_ai_responses.py: 22 warnings
+tests/test_analytics.py: 45 warnings
+tests/test_embeddings.py: 1 warning
+tests/test_phase2_comprehensive.py: 33 warnings
+tests/test_search.py: 17 warnings
+tests/test_similar_tickets.py: 17 warnings
+tests/test_smoke.py: 3 warnings
+tests/test_ticket_creation.py: 19 warnings
+tests/test_websocket.py: 8 warnings
+  /Users/davidfragoso/Documents/Projetos/support-ticket-triage-system/backend/app/services/websocket_manager.py:42: DeprecationWarning: Call to deprecated close. (Use aclose() instead) -- Deprecated since version 5.0.0.
+    await self.redis_client.close()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_similar_tickets.py::TestSimilarTicketsParameters::test_limit_parameter_max
+FAILED tests/test_ticket_creation.py::TestTicketEdgeCases::test_ticket_with_very_long_body
+FAILED tests/test_websocket.py::test_ticket_claim_endpoint - sqlalchemy.exc.S...
+FAILED tests/test_websocket.py::test_ticket_release_endpoint - sqlalchemy.exc...
+FAILED tests/test_websocket.py::test_ticket_claim_conflict - sqlalchemy.exc.S...
+FAILED tests/test_websocket.py::test_websocket_receives_new_ticket_broadcast
+====== 6 failed, 196 passed, 2 skipped, 175 warnings in 67.47s (0:01:07) =======
+Encoding text...
+Encoding done.

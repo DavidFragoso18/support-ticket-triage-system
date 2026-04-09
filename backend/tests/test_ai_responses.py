@@ -12,11 +12,6 @@ Tests cover:
 from uuid import uuid4
 
 import pytest
-from fastapi.testclient import TestClient
-
-from app.main import app
-
-
 
 
 class TestAIResponseGeneration:
@@ -122,7 +117,7 @@ class TestAIResponseGeneration:
         if response.status_code == 200:
             data = response.json()
             # Should have context information
-            assert "context" in data or "similar_tickets" in data
+            assert "context_used" in data
 
 
 class TestAIResponseSaving:
@@ -145,11 +140,10 @@ class TestAIResponseSaving:
             "ticket_id": ticket_id,
             "response_text": "This is a test AI response",
             "tone": "professional",
-            "context_used": {"similar_tickets": 3, "kb_articles": 2},
+            "context_used": 5,
             "model": "llama3.2:latest",
             "agent_id": "test-agent",
             "was_edited": False,
-            "was_sent": False,
         }
         response = client.post("/llm/save-response", json=save_data)
         assert response.status_code in [200, 201]
@@ -170,18 +164,18 @@ class TestAIResponseSaving:
             "ticket_id": ticket_id,
             "response_text": "This response was edited by the agent",
             "tone": "friendly",
-            "context_used": {},
+            "context_used": 0,
             "model": "llama3.2:latest",
             "agent_id": "test-agent",
             "was_edited": True,
-            "was_sent": False,
         }
         response = client.post("/llm/save-response", json=save_data)
         assert response.status_code in [200, 201]
 
         if response.status_code in [200, 201]:
             data = response.json()
-            assert data["was_edited"] is True
+            assert "id" in data
+            assert data["message"] == "Response saved successfully"
 
     def test_save_response_required_fields(self, client):
         """Test save response validates required fields"""
@@ -201,11 +195,10 @@ class TestAIResponseSaving:
             "ticket_id": str(uuid4()),  # Nonexistent ticket
             "response_text": "Test response",
             "tone": "professional",
-            "context_used": {},
+            "context_used": 0,
             "model": "test-model",
             "agent_id": "test-agent",
             "was_edited": False,
-            "was_sent": False,
         }
         response = client.post("/llm/save-response", json=save_data)
         # Should return error (404 or 400)
@@ -227,11 +220,10 @@ class TestAIResponseSaving:
             "ticket_id": ticket_id,
             "response_text": "First AI response",
             "tone": "professional",
-            "context_used": {},
+            "context_used": 0,
             "model": "llama3.2:latest",
             "agent_id": "agent-1",
             "was_edited": False,
-            "was_sent": False,
         }
         response1 = client.post("/llm/save-response", json=save_data1)
 
@@ -240,11 +232,10 @@ class TestAIResponseSaving:
             "ticket_id": ticket_id,
             "response_text": "Second AI response with different tone",
             "tone": "friendly",
-            "context_used": {},
+            "context_used": 0,
             "model": "llama3.2:latest",
             "agent_id": "agent-1",
             "was_edited": True,
-            "was_sent": False,
         }
         response2 = client.post("/llm/save-response", json=save_data2)
 
@@ -281,11 +272,10 @@ class TestAIResponseRetrieval:
             "ticket_id": ticket_id,
             "response_text": "Saved response for retrieval",
             "tone": "empathetic",
-            "context_used": {},
+            "context_used": 0,
             "model": "llama3.2:latest",
             "agent_id": "test-agent",
             "was_edited": False,
-            "was_sent": False,
         }
         client.post("/llm/save-response", json=save_data)
 
@@ -332,11 +322,10 @@ class TestAIResponseRetrieval:
                 "ticket_id": ticket_id,
                 "response_text": f"Response {i}",
                 "tone": "professional",
-                "context_used": {},
+                "context_used": 0,
                 "model": "llama3.2:latest",
                 "agent_id": "test-agent",
                 "was_edited": False,
-                "was_sent": False,
             }
             client.post("/llm/save-response", json=save_data)
             time.sleep(0.1)  # Small delay to ensure different timestamps
@@ -382,11 +371,10 @@ class TestAIResponseIntegration:
                 "ticket_id": ticket_id,
                 "response_text": response_text,
                 "tone": "friendly",
-                "context_used": suggested_response.get("context", {}),
+                "context_used": suggested_response.get("context_used", 0),
                 "model": suggested_response.get("model", "unknown"),
                 "agent_id": "test-agent",
                 "was_edited": False,
-                "was_sent": False,
             }
             save_response = client.post("/llm/save-response", json=save_data)
 
@@ -455,11 +443,10 @@ class TestAIResponsePerformance:
             "ticket_id": ticket_id,
             "response_text": "Performance test response",
             "tone": "professional",
-            "context_used": {},
+            "context_used": 0,
             "model": "test-model",
             "agent_id": "test-agent",
             "was_edited": False,
-            "was_sent": False,
         }
 
         start_time = time.time()

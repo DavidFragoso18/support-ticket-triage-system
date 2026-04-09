@@ -2,7 +2,7 @@
 
 import json
 import logging
-from typing import Dict, Set, Optional
+from typing import Dict, Optional, Set
 
 import redis.asyncio as redis
 from fastapi import WebSocket
@@ -42,7 +42,9 @@ class ConnectionManager:
             await self.redis_client.close()
             logger.info("Redis connection closed")
 
-    async def connect(self, websocket: WebSocket, connection_id: str, agent_id: Optional[str] = None):
+    async def connect(
+        self, websocket: WebSocket, connection_id: str, agent_id: Optional[str] = None
+    ):
         """Accept a new WebSocket connection"""
         await websocket.accept()
         self.active_connections[connection_id] = websocket

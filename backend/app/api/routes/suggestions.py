@@ -1,7 +1,7 @@
 from typing import Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlmodel import Session
 
@@ -64,6 +64,8 @@ def get_suggestions(
                 )
 
         return out
+    except HTTPException:
+        raise
     except Exception:
         logger.exception("GET_SUGGESTIONS_FAILED")
         raise internal_error("GET_SUGGESTIONS_FAILED", "Could not compute suggestions.")
