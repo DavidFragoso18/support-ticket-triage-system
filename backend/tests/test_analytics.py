@@ -16,18 +16,18 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 
-client = TestClient(app)
+
 
 
 class TestAnalyticsEndpoint:
     """Test analytics endpoint basic functionality"""
 
-    def test_analytics_endpoint_exists(self):
+    def test_analytics_endpoint_exists(self, client):
         """Analytics endpoint should be accessible"""
         r = client.get("/analytics/overview")
         assert r.status_code == 200
 
-    def test_analytics_response_structure(self):
+    def test_analytics_response_structure(self, client):
         """Analytics response should have expected structure"""
         r = client.get("/analytics/overview")
         assert r.status_code == 200
@@ -40,7 +40,7 @@ class TestAnalyticsEndpoint:
         assert "low_confidence_count" in data
         assert "feedback_count" in data
 
-    def test_analytics_metrics_types(self):
+    def test_analytics_metrics_types(self, client):
         """Analytics metrics should have correct types"""
         r = client.get("/analytics/overview")
         data = r.json()
@@ -52,7 +52,7 @@ class TestAnalyticsEndpoint:
         assert isinstance(data["low_confidence_count"], int)
         assert isinstance(data["feedback_count"], int)
 
-    def test_analytics_metrics_values(self):
+    def test_analytics_metrics_values(self, client):
         """Analytics metrics should have valid values"""
         r = client.get("/analytics/overview")
         data = r.json()
@@ -70,26 +70,26 @@ class TestAnalyticsEndpoint:
 class TestAnalyticsDateFiltering:
     """Test date filtering functionality"""
 
-    def test_analytics_with_start_date(self):
+    def test_get_ticket_stats_empty(self, client):
         """Analytics should accept start_date parameter"""
         start_date = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
         r = client.get(f"/analytics/overview?start_date={start_date}")
         assert r.status_code == 200
 
-    def test_analytics_with_end_date(self):
+    def test_analytics_with_end_date(self, client):
         """Analytics should accept end_date parameter"""
         end_date = datetime.now().strftime("%Y-%m-%d")
         r = client.get(f"/analytics/overview?end_date={end_date}")
         assert r.status_code == 200
 
-    def test_analytics_with_date_range(self):
+    def test_analytics_with_date_range(self, client):
         """Analytics should accept both start and end dates"""
         start_date = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
         end_date = datetime.now().strftime("%Y-%m-%d")
         r = client.get(f"/analytics/overview?start_date={start_date}&end_date={end_date}")
         assert r.status_code == 200
 
-    def test_analytics_invalid_date_format(self):
+    def test_invalid_date_format(self, client):
         """Analytics should reject invalid date formats"""
         r = client.get("/analytics/overview?start_date=invalid-date")
         # Should either return 400 or handle gracefully
@@ -100,7 +100,7 @@ class TestAnalyticsCalculations:
     """Test accuracy calculations with known data"""
 
     @pytest.fixture
-    def create_test_ticket_with_feedback(self):
+    def create_test_data(self, client):
         """Helper to create a ticket and submit feedback"""
 
         def _create(correct=True):
@@ -143,14 +143,14 @@ class TestAnalyticsCalculations:
 
         return _create
 
-    def test_analytics_with_feedback(self, create_test_ticket_with_feedback):
+    def test_get_ticket_stats(self, client, create_test_data):
         """Analytics should update after feedback is submitted"""
         # Get initial analytics
         r1 = client.get("/analytics/overview")
         initial_count = r1.json()["feedback_count"]
 
         # Create ticket with feedback
-        create_test_ticket_with_feedback(correct=True)
+        create_test_data(correct=True)
 
         # Get updated analytics
         r2 = client.get("/analytics/overview")
@@ -163,7 +163,7 @@ class TestAnalyticsCalculations:
 class TestAnalyticsEdgeCases:
     """Test edge cases and error handling"""
 
-    def test_analytics_with_no_tickets(self):
+    def test_analytics_with_no_tickets(self, client):
         """Analytics should handle case with no tickets gracefully"""
         # Even if there are tickets, test that endpoint doesn't crash
         r = client.get("/analytics/overview")
@@ -174,7 +174,7 @@ class TestAnalyticsEdgeCases:
         assert isinstance(data["total_tickets"], int)
         assert isinstance(data["feedback_count"], int)
 
-    def test_analytics_with_future_date_range(self):
+    def test_analytics_with_future_date_range(self, client):
         """Analytics with future dates should return empty results"""
         start_date = (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d")
         end_date = (datetime.now() + timedelta(days=7)).strftime("%Y-%m-%d")
@@ -185,7 +185,7 @@ class TestAnalyticsEdgeCases:
         # Should have zero or very low counts
         assert data["total_tickets"] >= 0
 
-    def test_analytics_confidence_metrics(self):
+    def test_analytics_confidence_metrics(self, client):
         """Test confidence-related metrics"""
         r = client.get("/analytics/overview")
         data = r.json()
@@ -206,7 +206,7 @@ class TestAnalyticsEdgeCases:
 class TestAnalyticsPerformance:
     """Test analytics endpoint performance"""
 
-    def test_analytics_response_time(self):
+    def test_analytics_response_time(self, client):
         """Analytics should respond within reasonable time"""
         import time
 
@@ -220,7 +220,7 @@ class TestAnalyticsPerformance:
         # Should respond within 5 seconds even with large dataset
         assert response_time < 5.0
 
-    def test_analytics_with_large_date_range(self):
+    def test_analytics_with_large_date_range(self, client):
         """Analytics should handle large date ranges"""
         start_date = "2020-01-01"
         end_date = "2025-12-31"
@@ -231,7 +231,7 @@ class TestAnalyticsPerformance:
 class TestAnalyticsIntegration:
     """Test analytics integration with other endpoints"""
 
-    def test_analytics_tickets_today_matches_created(self):
+    def test_analytics_tickets_today_matches_created(self, client):
         """Tickets today count should reflect recently created tickets"""
         # Get current count
         r1 = client.get("/analytics/overview")
@@ -256,7 +256,7 @@ class TestAnalyticsIntegration:
         # Count should have increased
         assert updated_count >= initial_count
 
-    def test_analytics_low_confidence_tracking(self):
+    def test_analytics_low_confidence_tracking(self, client):
         """Low confidence count should track classification confidence"""
         r = client.get("/analytics/overview")
         data = r.json()
@@ -276,7 +276,7 @@ class TestAnalyticsIntegration:
 class TestAnalyticsDashboard:
     """Test suite for Phase 5 analytics dashboard endpoint"""
 
-    def test_analytics_dashboard_endpoint(self):
+    def test_analytics_dashboard_endpoint(self, client):
         """Test analytics dashboard endpoint is accessible"""
         response = client.get("/analytics/dashboard")
         assert response.status_code == 200
@@ -287,14 +287,14 @@ class TestAnalyticsDashboard:
         assert "accuracy" in data
         assert "distributions" in data
 
-    def test_analytics_dashboard_with_days_filter(self):
+    def test_analytics_dashboard_with_days_filter(self, client):
         """Test analytics dashboard with days parameter"""
         response = client.get("/analytics/dashboard?days=30")
         assert response.status_code == 200
         data = response.json()
         assert "overview" in data
 
-    def test_analytics_overview_structure(self):
+    def test_analytics_overview_structure(self, client):
         """Test analytics overview has correct structure"""
         response = client.get("/analytics/dashboard")
         assert response.status_code == 200
@@ -306,7 +306,7 @@ class TestAnalyticsDashboard:
         assert "avg_confidence" in overview
         assert "low_confidence_count" in overview
 
-    def test_analytics_accuracy_structure(self):
+    def test_analytics_accuracy_structure(self, client):
         """Test analytics accuracy section structure"""
         response = client.get("/analytics/dashboard")
         assert response.status_code == 200
@@ -318,7 +318,7 @@ class TestAnalyticsDashboard:
         assert "corrected" in accuracy
         assert "acceptance_rate" in accuracy
 
-    def test_analytics_distributions_structure(self):
+    def test_analytics_distributions_structure(self, client):
         """Test analytics distributions structure"""
         response = client.get("/analytics/dashboard")
         assert response.status_code == 200
@@ -334,7 +334,7 @@ class TestAnalyticsDashboard:
         assert isinstance(distributions["by_sentiment"], dict)
         assert isinstance(distributions["by_priority"], dict)
 
-    def test_analytics_performance_metrics_valid_ranges(self):
+    def test_analytics_performance_metrics_valid_ranges(self, client):
         """Test analytics metrics are in valid ranges"""
         response = client.get("/analytics/dashboard")
         assert response.status_code == 200
@@ -350,7 +350,7 @@ class TestAnalyticsDashboard:
         if acc_rate is not None:
             assert 0 <= acc_rate <= 100
 
-    def test_analytics_with_no_data(self):
+    def test_invalid_export_format(self, client):
         """Test analytics endpoints handle no data gracefully"""
         # Even with no data, should return structure
         response = client.get("/analytics/dashboard?days=1")
@@ -363,20 +363,20 @@ class TestAnalyticsDashboard:
         assert "distributions" in data
 
     @pytest.mark.parametrize("days", [7, 14, 30, 90])
-    def test_analytics_dashboard_different_periods(self, days):
+    def test_analytics_dashboard_different_periods(self, client, days):
         """Test analytics dashboard with different time periods"""
         response = client.get(f"/analytics/dashboard?days={days}")
         assert response.status_code == 200
         data = response.json()
         assert "overview" in data
 
-    def test_analytics_invalid_days_parameter(self):
+    def test_analytics_invalid_days_parameter(self, client):
         """Test analytics with invalid days parameter"""
         response = client.get("/analytics/dashboard?days=-1")
         # Should either use default or return validation error
         assert response.status_code in [200, 422]
 
-    def test_analytics_very_large_days_parameter(self):
+    def test_analytics_very_large_days_parameter(self, client):
         """Test analytics with very large days parameter"""
         response = client.get("/analytics/dashboard?days=36500")  # 100 years
         assert response.status_code == 200
@@ -386,7 +386,7 @@ class TestAnalyticsDashboard:
 class TestAnalyticsTrends:
     """Test suite for Phase 5 analytics trends endpoint"""
 
-    def test_analytics_trends_endpoint(self):
+    def test_get_trends_empty(self, client):
         """Test trends endpoint"""
         response = client.get("/analytics/trends?days=7")
         assert response.status_code == 200
@@ -400,7 +400,7 @@ class TestAnalyticsTrends:
             assert "high_priority" in trend
             assert "resolved" in trend
 
-    def test_analytics_trends_date_format(self):
+    def test_analytics_trends_date_format(self, client):
         """Test trends return proper date format"""
         response = client.get("/analytics/trends?days=7")
         assert response.status_code == 200
@@ -414,7 +414,7 @@ class TestAnalyticsTrends:
             except (ValueError, AttributeError):
                 pytest.fail("Date is not in valid ISO format")
 
-    def test_analytics_trends_count_matches_days(self):
+    def test_analytics_trends_count_matches_days(self, client):
         """Test trends return correct number of days"""
         days = 7
         response = client.get(f"/analytics/trends?days={days}")
@@ -424,7 +424,7 @@ class TestAnalyticsTrends:
         # Should return up to 'days' number of data points
         assert len(data) <= days
 
-    def test_analytics_trends_default_days(self):
+    def test_analytics_trends_default_days(self, client):
         """Test trends with default days parameter"""
         response = client.get("/analytics/trends")
         assert response.status_code == 200
@@ -432,14 +432,14 @@ class TestAnalyticsTrends:
         assert isinstance(data, list)
 
     @pytest.mark.parametrize("days", [1, 7, 14, 30])
-    def test_analytics_trends_various_periods(self, days):
+    def test_analytics_trends_various_periods(self, client, days):
         """Test trends with various time periods"""
         response = client.get(f"/analytics/trends?days={days}")
         assert response.status_code == 200
         data = response.json()
         assert len(data) <= days
 
-    def test_analytics_trends_data_types(self):
+    def test_export_analytics(self, client, create_test_data):
         """Test trends return correct data types"""
         response = client.get("/analytics/trends?days=7")
         assert response.status_code == 200
@@ -455,7 +455,7 @@ class TestAnalyticsTrends:
 class TestAgentPerformance:
     """Test suite for Phase 5 agent performance analytics"""
 
-    def test_analytics_agents_performance(self):
+    def test_analytics_agents_performance(self, client):
         """Test agent performance endpoint"""
         response = client.get("/analytics/agents/performance?days=30")
         assert response.status_code == 200
@@ -469,7 +469,7 @@ class TestAgentPerformance:
             assert "tickets_resolved" in agent
             assert "avg_resolution_time" in agent
 
-    def test_analytics_agent_performance_sorting(self):
+    def test_analytics_agent_performance_sorting(self, client):
         """Test agent performance is sorted by resolution rate"""
         response = client.get("/analytics/agents/performance")
         assert response.status_code == 200
@@ -480,7 +480,7 @@ class TestAgentPerformance:
             rates = [agent.get("resolution_rate", 0) for agent in data]
             assert rates == sorted(rates, reverse=True)
 
-    def test_agent_performance_calculation(self):
+    def test_get_agent_performance(self, client, create_test_data):
         """Test agent performance metrics are calculated correctly"""
         response = client.get("/analytics/agents/performance")
         assert response.status_code == 200
@@ -492,21 +492,21 @@ class TestAgentPerformance:
                 expected_rate = (agent["tickets_resolved"] / agent["tickets_claimed"]) * 100
                 assert abs(agent["resolution_rate"] - expected_rate) < 0.01
 
-    def test_agent_performance_with_days_filter(self):
+    def test_agent_performance_with_days_filter(self, client):
         """Test agent performance with different day ranges"""
         response = client.get("/analytics/agents/performance?days=7")
         assert response.status_code == 200
         data = response.json()
         assert isinstance(data, list)
 
-    def test_agent_performance_default_days(self):
+    def test_agent_performance_default_days(self, client):
         """Test agent performance with default days parameter"""
         response = client.get("/analytics/agents/performance")
         assert response.status_code == 200
         data = response.json()
         assert isinstance(data, list)
 
-    def test_agent_performance_data_types(self):
+    def test_get_agent_performance_date_range(self, client, create_test_data):
         """Test agent performance returns correct data types"""
         response = client.get("/analytics/agents/performance")
         assert response.status_code == 200
@@ -519,7 +519,7 @@ class TestAgentPerformance:
             assert isinstance(agent["tickets_resolved"], int)
             assert isinstance(agent["resolution_rate"], (int, float))
 
-    def test_agent_performance_resolution_time_nullable(self):
+    def test_agent_performance_resolution_time_nullable(self, client):
         """Test avg_resolution_time can be null for agents with no resolutions"""
         response = client.get("/analytics/agents/performance")
         assert response.status_code == 200

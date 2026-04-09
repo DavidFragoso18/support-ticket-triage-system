@@ -17,14 +17,14 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 
-client = TestClient(app)
+
 
 
 class TestTicketFiltering:
     """Test ticket filtering functionality"""
 
     @pytest.fixture
-    def create_test_tickets(self):
+    def create_test_tickets(self, client):
         """Create a set of tickets with different attributes"""
         tickets = []
 
@@ -77,7 +77,7 @@ class TestTicketFiltering:
 
         return tickets
 
-    def test_filter_by_intent(self, create_test_tickets):
+    def test_filter_by_intent(self, client, create_test_tickets):
         """Should filter tickets by intent"""
         # Filter for billing intent
         r = client.get("/tickets?page=1&page_size=10&intent=billing")
@@ -90,7 +90,7 @@ class TestTicketFiltering:
         # Should have at least some results
         assert isinstance(data["items"], list)
 
-    def test_filter_by_priority(self, create_test_tickets):
+    def test_filter_by_priority(self, client, create_test_tickets):
         """Should filter tickets by priority"""
         # Filter for P1 priority
         r = client.get("/tickets?page=1&page_size=10&priority=P1")
@@ -105,7 +105,7 @@ class TestTicketFiltering:
             if ticket.get("classification"):
                 assert ticket["classification"].get("priority") in ["P1", None]
 
-    def test_filter_by_sentiment(self, create_test_tickets):
+    def test_filter_by_sentiment(self, client, create_test_tickets):
         """Should filter tickets by sentiment"""
         # Filter for negative sentiment
         r = client.get("/tickets?page=1&page_size=10&sentiment=negative")
@@ -116,7 +116,7 @@ class TestTicketFiltering:
         assert "total" in data
         assert isinstance(data["items"], list)
 
-    def test_filter_by_channel(self, create_test_tickets):
+    def test_filter_by_channel(self, client, create_test_tickets):
         """Should filter tickets by channel"""
         # Filter for email channel
         r = client.get("/tickets?page=1&page_size=10&channel=email")
@@ -129,7 +129,7 @@ class TestTicketFiltering:
         for ticket in data["items"]:
             assert ticket.get("channel") in ["email", None]
 
-    def test_filter_multiple_criteria(self, create_test_tickets):
+    def test_filter_multiple_criteria(self, client, create_test_tickets):
         """Should filter tickets with multiple criteria"""
         # Filter for billing intent AND P1 priority
         r = client.get("/tickets?page=1&page_size=10&intent=billing&priority=P1")
@@ -139,7 +139,7 @@ class TestTicketFiltering:
         assert "items" in data
         assert "total" in data
 
-    def test_filter_by_date_range(self):
+    def test_filter_by_date_range(self, client):
         """Should filter tickets by date range"""
         # Filter for tickets from last 7 days
         start_date = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
@@ -152,7 +152,7 @@ class TestTicketFiltering:
         assert "items" in data
         assert "total" in data
 
-    def test_filter_invalid_intent(self):
+    def test_filter_invalid_intent(self, client):
         """Should handle invalid intent gracefully"""
         r = client.get("/tickets?page=1&page_size=10&intent=invalid_intent_type")
         assert r.status_code in [200, 422]
@@ -162,7 +162,7 @@ class TestTicketFiltering:
             data = r.json()
             assert "items" in data
 
-    def test_filter_no_results(self):
+    def test_filter_no_results(self, client):
         """Should handle filters that return no results"""
         # Use very specific future date range
         start_date = (datetime.now() + timedelta(days=100)).strftime("%Y-%m-%d")
@@ -179,7 +179,7 @@ class TestTicketFiltering:
 class TestPagination:
     """Test pagination functionality"""
 
-    def test_pagination_first_page(self):
+    def test_pagination_first_page(self, client):
         """Should return first page of results"""
         r = client.get("/tickets?page=1&page_size=5")
         assert r.status_code == 200
@@ -192,7 +192,7 @@ class TestPagination:
         assert data["page"] == 1
         assert len(data["items"]) <= 5
 
-    def test_pagination_page_size(self):
+    def test_pagination_page_size(self, client):
         """Should respect page_size parameter"""
         r = client.get("/tickets?page=1&page_size=3")
         assert r.status_code == 200
@@ -200,7 +200,7 @@ class TestPagination:
 
         assert len(data["items"]) <= 3
 
-    def test_pagination_second_page(self):
+    def test_pagination_second_page(self, client):
         """Should return second page of results"""
         r = client.get("/tickets?page=2&page_size=5")
         assert r.status_code == 200
@@ -208,13 +208,13 @@ class TestPagination:
 
         assert data["page"] == 2
 
-    def test_pagination_invalid_page(self):
+    def test_pagination_invalid_page(self, client):
         """Should handle invalid page numbers gracefully"""
         r = client.get("/tickets?page=0&page_size=10")
         # Should either return 422 or default to page 1
         assert r.status_code in [200, 422]
 
-    def test_pagination_large_page_number(self):
+    def test_pagination_large_page_number(self, client):
         """Should handle page numbers beyond available data"""
         r = client.get("/tickets?page=9999&page_size=10")
         assert r.status_code == 200
@@ -228,7 +228,7 @@ class TestSuggestions:
     """Test suggestions endpoint (KB articles and resolution templates)"""
 
     @pytest.fixture
-    def billing_ticket(self):
+    def billing_ticket(self, client):
         """Create a billing-related ticket"""
         ticket_data = {
             "subject": "Refund request for double charge",
@@ -244,7 +244,7 @@ class TestSuggestions:
         return r.json()
 
     @pytest.fixture
-    def password_ticket(self):
+    def password_ticket(self, client):
         """Create a password-related ticket"""
         ticket_data = {
             "subject": "Cannot reset password",
@@ -259,13 +259,13 @@ class TestSuggestions:
         assert r.status_code == 201
         return r.json()
 
-    def test_suggestions_endpoint_exists(self, billing_ticket):
+    def test_suggestions_endpoint_exists(self, client, billing_ticket):
         """Suggestions endpoint should be accessible"""
         ticket_id = billing_ticket["id"]
         r = client.get(f"/suggestions/{ticket_id}")
         assert r.status_code == 200
 
-    def test_suggestions_returns_list(self, billing_ticket):
+    def test_suggestions_returns_list(self, client, billing_ticket):
         """Suggestions should return a list"""
         ticket_id = billing_ticket["id"]
         r = client.get(f"/suggestions/{ticket_id}")
@@ -274,7 +274,7 @@ class TestSuggestions:
         suggestions = r.json()
         assert isinstance(suggestions, list)
 
-    def test_suggestions_structure(self, billing_ticket):
+    def test_suggestions_structure(self, client, billing_ticket):
         """Each suggestion should have required fields"""
         ticket_id = billing_ticket["id"]
         r = client.get(f"/suggestions/{ticket_id}")
@@ -298,7 +298,7 @@ class TestSuggestions:
             assert isinstance(suggestion["score"], (int, float))
             assert suggestion["type"] in ["kb_article", "resolution_template"]
 
-    def test_suggestions_scoring(self, billing_ticket):
+    def test_suggestions_scoring(self, client, billing_ticket):
         """Suggestions should have similarity scores"""
         ticket_id = billing_ticket["id"]
         r = client.get(f"/suggestions/{ticket_id}")
@@ -310,7 +310,7 @@ class TestSuggestions:
             for suggestion in suggestions:
                 assert 0 <= suggestion["score"] <= 1
 
-    def test_suggestions_ordering(self, billing_ticket):
+    def test_suggestions_ordering(self, client, billing_ticket):
         """Suggestions should be ordered by score (highest first)"""
         ticket_id = billing_ticket["id"]
         r = client.get(f"/suggestions/{ticket_id}")
@@ -322,7 +322,7 @@ class TestSuggestions:
             scores = [s["score"] for s in suggestions]
             assert scores == sorted(scores, reverse=True)
 
-    def test_suggestions_limit_parameter(self, billing_ticket):
+    def test_suggestions_limit_parameter(self, client, billing_ticket):
         """Suggestions should respect limit parameter"""
         ticket_id = billing_ticket["id"]
 
@@ -333,7 +333,7 @@ class TestSuggestions:
         suggestions = r.json()
         assert len(suggestions) <= 3
 
-    def test_suggestions_different_tickets(self, billing_ticket, password_ticket):
+    def test_suggestions_different_tickets(self, client, billing_ticket, password_ticket):
         """Different tickets should get different suggestions"""
         # Get suggestions for billing ticket
         r1 = client.get(f"/suggestions/{billing_ticket['id']}")
@@ -353,7 +353,7 @@ class TestSuggestions:
             # At least some suggestions should be different
             assert billing_ids != password_ids or len(billing_suggestions) <= 1
 
-    def test_suggestions_nonexistent_ticket(self):
+    def test_suggestions_nonexistent_ticket(self, client):
         """Should handle suggestions for non-existent ticket"""
         fake_id = str(uuid4())
         r = client.get(f"/suggestions/{fake_id}")
@@ -364,7 +364,7 @@ class TestSuggestions:
             suggestions = r.json()
             assert isinstance(suggestions, list)
 
-    def test_suggestions_invalid_ticket_id(self):
+    def test_suggestions_invalid_ticket_id(self, client):
         """Should handle invalid ticket ID format"""
         r = client.get("/suggestions/invalid-id-format")
         assert r.status_code in [404, 422]
@@ -374,7 +374,7 @@ class TestSearchFunctionality:
     """Test search functionality"""
 
     @pytest.fixture
-    def searchable_tickets(self):
+    def searchable_tickets(self, client):
         """Create tickets with specific searchable content"""
         tickets = []
 
@@ -402,7 +402,7 @@ class TestSearchFunctionality:
 
         return tickets
 
-    def test_search_by_subject(self, searchable_tickets):
+    def test_search_by_subject(self, client, searchable_tickets):
         """Should search tickets by subject"""
         r = client.get("/tickets?page=1&page_size=10&search=refund")
         assert r.status_code == 200
@@ -415,7 +415,7 @@ class TestSearchFunctionality:
             # Some result should contain "refund"
             assert any("refund" in s for s in subjects)
 
-    def test_search_by_body(self, searchable_tickets):
+    def test_search_by_body(self, client, searchable_tickets):
         """Should search tickets by body content"""
         r = client.get("/tickets?page=1&page_size=10&search=password")
         assert r.status_code == 200
@@ -423,7 +423,7 @@ class TestSearchFunctionality:
 
         assert "items" in data
 
-    def test_search_case_insensitive(self, searchable_tickets):
+    def test_search_case_insensitive(self, client, searchable_tickets):
         """Search should be case-insensitive"""
         r1 = client.get("/tickets?page=1&page_size=10&search=PASSWORD")
         r2 = client.get("/tickets?page=1&page_size=10&search=password")
@@ -439,7 +439,7 @@ class TestSearchFunctionality:
         assert isinstance(data1["items"], list)
         assert isinstance(data2["items"], list)
 
-    def test_search_no_results(self):
+    def test_search_no_results(self, client):
         """Should handle search with no results"""
         r = client.get("/tickets?page=1&page_size=10&search=xyznonexistentterm123")
         assert r.status_code == 200
@@ -448,7 +448,7 @@ class TestSearchFunctionality:
         assert data["total"] >= 0
         assert isinstance(data["items"], list)
 
-    def test_search_with_filters(self, searchable_tickets):
+    def test_search_with_filters(self, client, searchable_tickets):
         """Should combine search with filters"""
         r = client.get("/tickets?page=1&page_size=10&search=password&intent=account_access")
         assert r.status_code == 200
@@ -461,7 +461,7 @@ class TestSearchFunctionality:
 class TestEdgeCases:
     """Test edge cases and error handling"""
 
-    def test_empty_filters(self):
+    def test_empty_filters(self, client):
         """Should handle request with no filters"""
         r = client.get("/tickets?page=1&page_size=10")
         assert r.status_code == 200
@@ -470,18 +470,18 @@ class TestEdgeCases:
         assert "items" in data
         assert "total" in data
 
-    def test_invalid_date_format(self):
+    def test_invalid_date_format(self, client):
         """Should handle invalid date format"""
         r = client.get("/tickets?page=1&page_size=10&start_date=invalid-date")
         # Should either return 422 or handle gracefully
         assert r.status_code in [200, 422]
 
-    def test_negative_page_size(self):
+    def test_negative_page_size(self, client):
         """Should handle negative page size"""
         r = client.get("/tickets?page=1&page_size=-10")
         assert r.status_code in [200, 422]
 
-    def test_very_large_page_size(self):
+    def test_very_large_page_size(self, client):
         """Should handle very large page size"""
         r = client.get("/tickets?page=1&page_size=10000")
         assert r.status_code == 200
@@ -494,7 +494,7 @@ class TestEdgeCases:
 class TestIntegration:
     """Integration tests combining multiple Phase 2 features"""
 
-    def test_filter_search_pagination_combined(self):
+    def test_filter_search_pagination_combined(self, client):
         """Should work with filters, search, and pagination together"""
         r = client.get("/tickets?page=1&page_size=5&intent=billing&search=charge")
         assert r.status_code == 200
@@ -506,7 +506,7 @@ class TestIntegration:
         assert data["page"] == 1
         assert len(data["items"]) <= 5
 
-    def test_suggestions_after_classification(self):
+    def test_suggestions_after_classification(self, client):
         """Suggestions should work with classified tickets"""
         # Create ticket (auto-classified)
         ticket_data = {

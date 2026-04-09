@@ -1,3 +1,5 @@
+from typing import Optional
+
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sqlmodel import Session, select
@@ -11,7 +13,7 @@ router = APIRouter(prefix="/kb", tags=["kb"])
 class KBOut(BaseModel):
     id: str
     title: str
-    tags: str | None = None
+    tags: Optional[str] = None
     created_at: str
 
 

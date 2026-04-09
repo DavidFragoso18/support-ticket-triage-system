@@ -2,17 +2,17 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 
-client = TestClient(app)
 
 
-def test_health():
+
+def test_health_check(client):
     """Health endpoint should respond with status ok"""
     r = client.get("/health")
     assert r.status_code == 200
     assert r.json()["status"] == "ok"
 
 
-def test_classify_billing():
+def test_classify_billing(client):
     """Billing complaint should be negative sentiment and P1 priority"""
     r = client.post(
         "/classify",
@@ -26,7 +26,7 @@ def test_classify_billing():
     assert data["priority"] in {"P1", "P2", "P3"}
 
 
-def test_ticket_roundtrip():
+def test_ticket_roundtrip(client):
     """Create ticket → auto-classify → fetch by list & id"""
     payload = {
         "subject": "Double charge",

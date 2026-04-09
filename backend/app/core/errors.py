@@ -1,3 +1,5 @@
+from typing import Optional
+
 import logging
 
 from fastapi import HTTPException
@@ -5,7 +7,7 @@ from fastapi import HTTPException
 logger = logging.getLogger(__name__)
 
 
-def internal_error(code: str, msg: str, *, extra: dict | None = None) -> HTTPException:
+def internal_error(code: str, msg: str, *, extra: Optional[dict] = None) -> HTTPException:
     # Keep details minimal; don’t leak internals
     payload = {"code": code, "message": msg}
     if extra:

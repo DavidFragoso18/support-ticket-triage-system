@@ -16,13 +16,13 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 
-client = TestClient(app)
+
 
 
 class TestAIResponseGeneration:
     """Test AI response generation endpoint"""
 
-    def test_suggest_response_endpoint_exists(self):
+    def test_suggest_response_endpoint_exists(self, client):
         """Test AI response suggestion endpoint is accessible"""
         # First create a ticket
         ticket_data = {
@@ -41,7 +41,7 @@ class TestAIResponseGeneration:
         assert response.status_code in [200, 500, 503]
 
     @pytest.mark.parametrize("tone", ["professional", "friendly", "technical", "empathetic"])
-    def test_suggest_response_with_different_tones(self, tone):
+    def test_suggest_response_with_different_tones(self, client, tone):
         """Test AI response generation with all tone options"""
         # Create a ticket
         ticket_data = {
@@ -64,7 +64,7 @@ class TestAIResponseGeneration:
             assert "tone" in data
             assert data["tone"] == tone
 
-    def test_suggest_response_default_tone(self):
+    def test_suggest_response_default_tone(self, client):
         """Test AI response uses default tone when not specified"""
         ticket_data = {
             "subject": "Default tone test",
@@ -84,7 +84,7 @@ class TestAIResponseGeneration:
             # Should have a default tone
             assert "tone" in data
 
-    def test_suggest_response_invalid_tone(self):
+    def test_suggest_response_invalid_tone(self, client):
         """Test AI response with invalid tone returns validation error"""
         ticket_data = {
             "subject": "Invalid tone test",
@@ -100,13 +100,13 @@ class TestAIResponseGeneration:
         # Should return validation error
         assert response.status_code == 422
 
-    def test_suggest_response_nonexistent_ticket(self):
+    def test_suggest_response_nonexistent_ticket(self, client):
         """Test AI response for nonexistent ticket returns 404"""
         fake_ticket_id = str(uuid4())
         response = client.get(f"/llm/suggest-response/{fake_ticket_id}?tone=professional")
         assert response.status_code == 404
 
-    def test_suggest_response_includes_context(self):
+    def test_suggest_response_includes_context(self, client):
         """Test AI response includes RAG context information"""
         ticket_data = {
             "subject": "Context test",
@@ -128,7 +128,7 @@ class TestAIResponseGeneration:
 class TestAIResponseSaving:
     """Test AI response save functionality"""
 
-    def test_save_response_endpoint_exists(self):
+    def test_save_response_endpoint_exists(self, client):
         """Test save response endpoint is accessible"""
         # Create a ticket first
         ticket_data = {
@@ -154,7 +154,7 @@ class TestAIResponseSaving:
         response = client.post("/llm/save-response", json=save_data)
         assert response.status_code in [200, 201]
 
-    def test_save_response_with_edit_tracking(self):
+    def test_save_response_with_edit_tracking(self, client):
         """Test saving response tracks edit status"""
         ticket_data = {
             "subject": "Edit tracking test",
@@ -183,7 +183,7 @@ class TestAIResponseSaving:
             data = response.json()
             assert data["was_edited"] is True
 
-    def test_save_response_required_fields(self):
+    def test_save_response_required_fields(self, client):
         """Test save response validates required fields"""
         # Missing required fields should return validation error
         save_data = {
@@ -195,7 +195,7 @@ class TestAIResponseSaving:
         # Should return validation error
         assert response.status_code == 422
 
-    def test_save_response_invalid_ticket_id(self):
+    def test_save_response_invalid_ticket_id(self, client):
         """Test saving response with invalid ticket ID"""
         save_data = {
             "ticket_id": str(uuid4()),  # Nonexistent ticket
@@ -211,7 +211,7 @@ class TestAIResponseSaving:
         # Should return error (404 or 400)
         assert response.status_code in [400, 404, 422]
 
-    def test_save_multiple_responses_for_same_ticket(self):
+    def test_save_multiple_responses_for_same_ticket(self, client):
         """Test saving multiple AI responses for the same ticket"""
         ticket_data = {
             "subject": "Multiple responses test",
@@ -256,7 +256,7 @@ class TestAIResponseSaving:
 class TestAIResponseRetrieval:
     """Test saved AI response retrieval"""
 
-    def test_get_saved_responses_endpoint_exists(self):
+    def test_get_saved_responses_endpoint_exists(self, client):
         """Test get saved responses endpoint is accessible"""
         # Use any ticket ID (even nonexistent)
         ticket_id = str(uuid4())
@@ -264,7 +264,7 @@ class TestAIResponseRetrieval:
         # Should return empty list or 404
         assert response.status_code in [200, 404]
 
-    def test_get_saved_responses_returns_list(self):
+    def test_get_saved_responses_returns_list(self, client):
         """Test get saved responses returns a list"""
         # Create ticket and save a response
         ticket_data = {
@@ -301,7 +301,7 @@ class TestAIResponseRetrieval:
                 assert "tone" in data[0]
                 assert "was_edited" in data[0]
 
-    def test_get_saved_responses_nonexistent_ticket(self):
+    def test_get_saved_responses_nonexistent_ticket(self, client):
         """Test get saved responses for nonexistent ticket"""
         fake_ticket_id = str(uuid4())
         response = client.get(f"/llm/saved-responses/{fake_ticket_id}")
@@ -313,7 +313,7 @@ class TestAIResponseRetrieval:
             assert isinstance(data, list)
             assert len(data) == 0
 
-    def test_saved_responses_ordered_by_creation(self):
+    def test_saved_responses_ordered_by_creation(self, client):
         """Test saved responses are ordered by creation time"""
         ticket_data = {
             "subject": "Order test",
@@ -358,7 +358,7 @@ class TestAIResponseRetrieval:
 class TestAIResponseIntegration:
     """Test AI response integration with ticket lifecycle"""
 
-    def test_full_ai_response_workflow(self):
+    def test_full_ai_response_workflow(self, client):
         """Test complete workflow: generate -> save -> retrieve"""
         # 1. Create ticket
         ticket_data = {
@@ -397,7 +397,7 @@ class TestAIResponseIntegration:
                 saved_responses = retrieve_response.json()
                 assert len(saved_responses) > 0
 
-    def test_ai_response_with_ticket_resolution(self):
+    def test_ai_response_with_ticket_resolution(self, client):
         """Test AI response generation considers ticket resolution status"""
         # Create and resolve a ticket
         ticket_data = {
@@ -418,7 +418,7 @@ class TestAIResponseIntegration:
 class TestAIResponsePerformance:
     """Test AI response performance characteristics"""
 
-    def test_response_generation_timeout(self):
+    def test_response_generation_timeout(self, client):
         """Test AI response generation completes within reasonable time"""
         import time
 
@@ -438,7 +438,7 @@ class TestAIResponsePerformance:
         # Should complete within 30 seconds (even if LLM is slow)
         assert elapsed_time < 30.0
 
-    def test_save_response_performance(self):
+    def test_save_response_performance(self, client):
         """Test saving response is fast"""
         import time
 

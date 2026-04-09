@@ -8,96 +8,108 @@ from sqlmodel import Session
 
 from app.main import app
 
-client = TestClient(app)
+
 
 
 class TestSemanticSearch:
     """Test suite for semantic search endpoints"""
 
-    def test_search_endpoint_exists(self):
+    def test_search_endpoint_exists(self, client):
         """Test search endpoint is accessible"""
         response = client.get("/search/tickets?q=login")
         assert response.status_code in [200, 422]  # 422 if validation fails
 
-    def test_search_with_semantic_mode(self):
+    def test_search_with_semantic_mode(self, client):
         """Test semantic search mode"""
         response = client.get("/search/tickets?q=login+problems&mode=semantic&limit=5")
         assert response.status_code == 200
         data = response.json()
-        assert isinstance(data, list)
+        data = response.json()
+        assert isinstance(data, dict)
+        assert "results" in data
+        assert isinstance(data["results"], list)
 
-    def test_search_with_keyword_mode(self):
+    def test_search_with_keyword_mode(self, client):
         """Test keyword search mode"""
         response = client.get("/search/tickets?q=email&mode=keyword&limit=5")
         assert response.status_code == 200
         data = response.json()
-        assert isinstance(data, list)
+        data = response.json()
+        assert isinstance(data, dict)
+        assert "results" in data
+        assert isinstance(data["results"], list)
 
-    def test_search_with_hybrid_mode(self):
+    def test_search_with_hybrid_mode(self, client):
         """Test hybrid search mode (default)"""
         response = client.get("/search/tickets?q=password+reset&mode=hybrid&limit=10")
         assert response.status_code == 200
         data = response.json()
-        assert isinstance(data, list)
+        data = response.json()
+        assert isinstance(data, dict)
+        assert "results" in data
+        assert isinstance(data["results"], list)
 
         # Check that results have expected fields
-        if len(data) > 0:
-            result = data[0]
+        if len(data["results"]) > 0:
+            result = data["results"][0]
             assert "id" in result
             assert "subject" in result
             assert "body" in result
             assert "similarity_score" in result or "match_type" in result
 
-    def test_search_with_custom_threshold(self):
+    def test_search_with_custom_threshold(self, client):
         """Test search with custom similarity threshold"""
         response = client.get("/search/tickets?q=billing&threshold=0.7&limit=5")
         assert response.status_code == 200
         data = response.json()
 
         # All results should meet threshold
-        for result in data:
+        for result in data["results"]:
             if "similarity_score" in result:
                 assert result["similarity_score"] >= 0.7
 
-    def test_search_with_limit(self):
+    def test_search_with_limit(self, client):
         """Test search respects limit parameter"""
         response = client.get("/search/tickets?q=support&limit=3")
         assert response.status_code == 200
         data = response.json()
-        assert len(data) <= 3
+        assert len(data["results"]) <= 3
 
-    def test_search_with_invalid_mode(self):
+    def test_search_with_invalid_mode(self, client):
         """Test search with invalid mode returns error"""
         response = client.get("/search/tickets?q=test&mode=invalid")
         assert response.status_code == 422  # Validation error
 
-    def test_search_with_empty_query(self):
+    def test_search_with_empty_query(self, client):
         """Test search with empty query"""
         response = client.get("/search/tickets?q=")
         # Should either return 422 (validation) or empty results
         assert response.status_code in [200, 422]
 
-    def test_search_with_very_long_query(self):
+    def test_search_with_very_long_query(self, client):
         """Test search handles very long queries"""
         long_query = "test " * 100
         response = client.get(f"/search/tickets?q={long_query}&limit=5")
         assert response.status_code in [200, 413]  # 200 OK or 413 Payload Too Large
 
-    def test_search_results_have_classification(self):
+    def test_search_results_have_classification(self, client):
         """Test search results include classification data"""
         response = client.get("/search/tickets?q=login&limit=5")
         assert response.status_code == 200
         data = response.json()
 
-        if len(data) > 0:
-            result = data[0]
+        if len(data["results"]) > 0:
+            result = data["results"][0]
             # Classification should be included if exists
-            if "classification" in result and result["classification"]:
-                assert "intent" in result["classification"]
-                assert "sentiment" in result["classification"]
-                assert "priority" in result["classification"]
+            # Note: result structure is {"ticket": ..., "score": ...}
+            if "ticket" in result and "classification" in result["ticket"]:
+                classification = result["ticket"]["classification"]
+                if classification:
+                    assert "intent" in classification
+                    assert "sentiment" in classification
+                    assert "priority" in classification
 
-    def test_search_performance_with_many_results(self):
+    def test_search_performance_with_many_results(self, client):
         """Test search performance with large result set"""
         import time
 
@@ -116,7 +128,7 @@ class TestSemanticSearch:
             ("xyzabc123", False),  # Should not find random string
         ],
     )
-    def test_search_finds_relevant_tickets(self, query, expected_matches):
+    def test_search_finds_relevant_tickets(self, client, query, expected_matches):
         """Test search finds relevant tickets"""
         response = client.get(f"/search/tickets?q={query}&limit=10")
         assert response.status_code == 200
@@ -124,26 +136,26 @@ class TestSemanticSearch:
 
         if expected_matches:
             # Should find at least one result
-            assert len(data) >= 0  # May be 0 if no test data
+            assert len(data["results"]) >= 0  # May be 0 if no test data
         # Random strings should return fewer results
 
-    def test_hybrid_search_combines_scores(self):
+    def test_hybrid_search_combines_scores(self, client):
         """Test hybrid search combines semantic and keyword scores"""
         response = client.get("/search/tickets?q=login+issue&mode=hybrid&limit=5")
         assert response.status_code == 200
         data = response.json()
 
-        if len(data) > 0:
+        if len(data["results"]) > 0:
             # Results should be ordered by combined score
-            scores = [r.get("similarity_score", 0) for r in data]
+            scores = [r.get("score", 0) for r in data["results"]]
             assert scores == sorted(scores, reverse=True)
 
-    def test_search_with_special_characters(self):
+    def test_search_with_special_characters(self, client):
         """Test search handles special characters"""
         response = client.get("/search/tickets?q=can't+won't&limit=5")
         assert response.status_code == 200
 
-    def test_search_case_insensitive(self):
+    def test_search_case_insensitive(self, client):
         """Test search is case insensitive"""
         response1 = client.get("/search/tickets?q=LOGIN&limit=5")
         response2 = client.get("/search/tickets?q=login&limit=5")
@@ -154,7 +166,7 @@ class TestSemanticSearch:
         # Should return similar results
         data1 = response1.json()
         data2 = response2.json()
-        assert len(data1) == len(data2) or abs(len(data1) - len(data2)) <= 2
+        assert len(data1["results"]) == len(data2["results"]) or abs(len(data1["results"]) - len(data2["results"])) <= 2
 
 
 class TestSearchIndexes:
@@ -162,18 +174,28 @@ class TestSearchIndexes:
 
     def test_tsvector_index_exists(self, session: Session):
         """Test that tsvector index exists on tickets table"""
+        # Skip for SQLite (PostgreSQL-specific feature)
+        if session.bind.dialect.name == "sqlite":
+            pytest.skip("PostgreSQL-specific test")
+        
+        from sqlalchemy import text
         # Check if search_vector column exists
         result = session.execute(
-            "SELECT column_name FROM information_schema.columns "
-            "WHERE table_name = 'tickets' AND column_name = 'search_vector'"
+            text("SELECT column_name FROM information_schema.columns "
+            "WHERE table_name = 'tickets' AND column_name = 'search_vector'")
         )
         assert result.fetchone() is not None
 
     def test_embedding_index_exists(self, session: Session):
         """Test that embedding index exists"""
+        # Skip for SQLite (PostgreSQL-specific feature)
+        if session.bind.dialect.name == "sqlite":
+            pytest.skip("PostgreSQL-specific test")
+            
+        from sqlalchemy import text
         result = session.execute(
-            "SELECT indexname FROM pg_indexes "
-            "WHERE tablename = 'tickets' AND indexname LIKE '%embedding%'"
+            text("SELECT indexname FROM pg_indexes "
+            "WHERE tablename = 'tickets' AND indexname LIKE '%embedding%'")
         )
         # Should have an index on embedding column
         assert result.fetchone() is not None

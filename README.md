@@ -174,7 +174,12 @@ git clone https://github.com/DavidFragoso18/support-ticket-triage-system.git
 cd support-ticket-triage-system
 ```
 
-### 2. Start Postgres (Docker)
+### 2. Setup (Installs everything)
+```bash
+make setup
+```
+
+### 3. Start Postgres (Docker)
 ```bash
 make up-db
 ```

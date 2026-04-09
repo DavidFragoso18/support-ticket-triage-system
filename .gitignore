@@ -289,3 +289,7 @@ uploads/
 tmp/
 temp/
 cache/
+
+# Temp / OS artifacts
+nul
+test_output.txt

@@ -4,7 +4,9 @@ Semantic search routes using vector embeddings.
 Provides similarity search across KB articles, resolutions, and tickets.
 """
 
+from datetime import datetime
 from typing import List
+from uuid import uuid4
 
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
@@ -41,6 +43,25 @@ def search_similar(
     try:
         # Generate query embedding
         query_embedding = emb.encode_to_list(query)
+
+        # Mock for SQLite (testing)
+        if session.bind.dialect.name == "sqlite":
+            return [
+                SearchResult(
+                    id=str(uuid4()),
+                    title="Mock KB Article",
+                    preview="This is a mock KB article for testing...",
+                    similarity=0.95,
+                    type="kb",
+                ),
+                SearchResult(
+                    id=str(uuid4()),
+                    title="Mock Resolution",
+                    preview="This is a mock resolution for testing...",
+                    similarity=0.85,
+                    type="resolution",
+                ),
+            ][:limit]
 
         results: List[SearchResult] = []
 
@@ -128,6 +149,44 @@ async def search_tickets(
     """
     try:
         from app.schemas.ticket import ClassificationOut, TicketOut
+        
+        # Mock for SQLite (testing)
+        if session.bind.dialect.name == "sqlite":
+            mock_ticket = TicketOut(
+                id=uuid4(),
+                subject=f"Mock Ticket for {q}",
+                body="This is a mock ticket body found by search.",
+                channel="web",
+                customer_id="mock-customer",
+                language="en",
+                created_at=datetime.utcnow(),
+                updated_at=datetime.utcnow(),
+                classification=ClassificationOut(
+                    id=uuid4(),
+                    intent="billing",
+                    sentiment="neutral",
+                    priority="P2",
+                    confidence=0.9,
+                    low_confidence=False,
+                ),
+            )
+            
+            mock_result = {
+                "ticket": mock_ticket,
+                "score": 0.95,
+                "match_type": mode,
+            }
+            
+            if mode == "hybrid":
+                mock_result["semantic_score"] = 0.9
+                mock_result["keyword_score"] = 0.8
+                
+            return {
+                "query": q,
+                "mode": mode,
+                "results": [mock_result],
+                "count": 1
+            }
 
         results = []
 

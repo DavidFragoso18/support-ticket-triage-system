@@ -7,10 +7,8 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 
-client = TestClient(app)
 
-
-def test_websocket_connection():
+def test_websocket_connection(client):
     """Test basic WebSocket connection"""
     with client.websocket_connect("/ws/tickets") as websocket:
         # Should receive connection confirmation
@@ -19,7 +17,7 @@ def test_websocket_connection():
         assert "connection_id" in data
 
 
-def test_websocket_connection_with_agent():
+def test_websocket_connection_with_agent(client):
     """Test WebSocket connection with agent ID"""
     with client.websocket_connect("/ws/tickets?agent_id=agent-123") as websocket:
         data = websocket.receive_json()
@@ -27,7 +25,7 @@ def test_websocket_connection_with_agent():
         assert data["agent_id"] == "agent-123"
 
 
-def test_websocket_ping_pong():
+def test_websocket_ping_pong(client):
     """Test ping/pong keep-alive mechanism"""
     with client.websocket_connect("/ws/tickets") as websocket:
         # Skip connection message
@@ -41,7 +39,7 @@ def test_websocket_ping_pong():
         assert response["type"] == "pong"
 
 
-def test_websocket_status_endpoint():
+def test_websocket_status_endpoint(client):
     """Test WebSocket status endpoint"""
     response = client.get("/ws/status")
     assert response.status_code == 200
@@ -51,7 +49,7 @@ def test_websocket_status_endpoint():
     assert "redis_connected" in data
 
 
-def test_ticket_claim_endpoint():
+def test_ticket_claim_endpoint(client):
     """Test ticket claim with broadcast"""
     # First create a ticket
     ticket_data = {
@@ -73,7 +71,7 @@ def test_ticket_claim_endpoint():
     assert data["ticket"]["status"] == "in_progress"
 
 
-def test_ticket_release_endpoint():
+def test_ticket_release_endpoint(client):
     """Test ticket release with broadcast"""
     # Create and claim a ticket
     ticket_data = {
@@ -97,7 +95,7 @@ def test_ticket_release_endpoint():
     assert data["ticket"]["status"] == "open"
 
 
-def test_ticket_claim_conflict():
+def test_ticket_claim_conflict(client):
     """Test that claiming an already claimed ticket returns conflict"""
     # Create a ticket
     ticket_data = {
@@ -117,7 +115,7 @@ def test_ticket_claim_conflict():
     assert conflict_response.status_code == 409
 
 
-def test_websocket_receives_new_ticket_broadcast():
+def test_websocket_receives_new_ticket_broadcast(client):
     """Test that connected clients receive new ticket broadcasts"""
     with client.websocket_connect("/ws/tickets") as websocket:
         # Skip connection message
@@ -154,7 +152,7 @@ def test_websocket_receives_new_ticket_broadcast():
             # (broadcast happens in background task which may be delayed)
             pass
         finally:
-            thread.join()
+             thread.join()
 
 
 if __name__ == "__main__":

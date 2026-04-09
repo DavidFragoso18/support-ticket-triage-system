@@ -16,14 +16,14 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 
-client = TestClient(app)
+
 
 
 class TestSimilarTicketsEndpoint:
     """Test similar tickets endpoint basic functionality"""
 
     @pytest.fixture
-    def create_similar_tickets(self):
+    def create_similar_tickets(self, client):
         """Create a set of similar tickets for testing"""
         tickets = []
 
@@ -67,7 +67,7 @@ class TestSimilarTicketsEndpoint:
 
         return tickets
 
-    def test_similar_tickets_endpoint_exists(self, create_similar_tickets):
+    def test_similar_tickets_endpoint_exists(self, client, create_similar_tickets):
         """Similar tickets endpoint should be accessible"""
         tickets = create_similar_tickets
         ticket_id = tickets[0]["id"]
@@ -75,7 +75,7 @@ class TestSimilarTicketsEndpoint:
         r = client.get(f"/tickets/{ticket_id}/similar")
         assert r.status_code == 200
 
-    def test_similar_tickets_response_structure(self, create_similar_tickets):
+    def test_similar_tickets_response_structure(self, client, create_similar_tickets):
         """Similar tickets response should have expected structure"""
         tickets = create_similar_tickets
         ticket_id = tickets[0]["id"]
@@ -87,7 +87,7 @@ class TestSimilarTicketsEndpoint:
         assert "similar_tickets" in data
         assert isinstance(data["similar_tickets"], list)
 
-    def test_similar_ticket_item_structure(self, create_similar_tickets):
+    def test_similar_ticket_item_structure(self, client, create_similar_tickets):
         """Each similar ticket should have required fields"""
         tickets = create_similar_tickets
         ticket_id = tickets[0]["id"]
@@ -117,7 +117,7 @@ class TestSimilarityScoring:
     """Test similarity score calculations and filtering"""
 
     @pytest.fixture
-    def password_ticket(self):
+    def password_ticket(self, client):
         """Create a ticket about password issues"""
         ticket_data = {
             "subject": "Password reset not working",
@@ -129,7 +129,7 @@ class TestSimilarityScoring:
         assert r.status_code == 201
         return r.json()
 
-    def test_similarity_score_range(self, password_ticket):
+    def test_similarity_score_range(self, client, password_ticket):
         """Similarity scores should be between 0 and 1"""
         ticket_id = password_ticket["id"]
 
@@ -140,7 +140,7 @@ class TestSimilarityScoring:
             similarity = similar["similarity"]
             assert 0 <= similarity <= 1
 
-    def test_similarity_threshold(self, password_ticket):
+    def test_similarity_threshold(self, client, password_ticket):
         """Only tickets with similarity > 0.5 should be returned"""
         ticket_id = password_ticket["id"]
 
@@ -151,7 +151,7 @@ class TestSimilarityScoring:
             similarity = similar["similarity"]
             assert similarity > 0.5
 
-    def test_similarity_ordering(self, password_ticket):
+    def test_similarity_ordering(self, client, password_ticket):
         """Similar tickets should be ordered by similarity (highest first)"""
         ticket_id = password_ticket["id"]
 
@@ -166,7 +166,7 @@ class TestSimilarityScoring:
                 next_sim = similar_tickets[i + 1]["similarity"]
                 assert current_sim >= next_sim
 
-    def test_excludes_current_ticket(self, password_ticket):
+    def test_excludes_current_ticket(self, client, password_ticket):
         """Similar tickets should not include the current ticket"""
         ticket_id = password_ticket["id"]
 
@@ -181,7 +181,7 @@ class TestSimilarTicketsParameters:
     """Test query parameters for similar tickets endpoint"""
 
     @pytest.fixture
-    def ticket_with_many_similar(self):
+    def ticket_with_many_similar(self, client):
         """Create a ticket that should have many similar matches"""
         # Create main ticket
         main_ticket = {
@@ -194,7 +194,7 @@ class TestSimilarTicketsParameters:
         assert r.status_code == 201
         return r.json()
 
-    def test_limit_parameter_default(self, ticket_with_many_similar):
+    def test_limit_parameter_default(self, client, ticket_with_many_similar):
         """Default limit should be 5"""
         ticket_id = ticket_with_many_similar["id"]
 
@@ -204,7 +204,7 @@ class TestSimilarTicketsParameters:
         # Should return at most 5 results (default limit)
         assert len(data["similar_tickets"]) <= 5
 
-    def test_limit_parameter_custom(self, ticket_with_many_similar):
+    def test_limit_parameter_custom(self, client, ticket_with_many_similar):
         """Should respect custom limit parameter"""
         ticket_id = ticket_with_many_similar["id"]
 
@@ -214,7 +214,7 @@ class TestSimilarTicketsParameters:
         # Should return at most 3 results
         assert len(data["similar_tickets"]) <= 3
 
-    def test_limit_parameter_max(self, ticket_with_many_similar):
+    def test_limit_parameter_max(self, client, ticket_with_many_similar):
         """Limit should be capped at 20"""
         ticket_id = ticket_with_many_similar["id"]
 
@@ -224,7 +224,7 @@ class TestSimilarTicketsParameters:
         # Should return at most 20 results (max limit)
         assert len(data["similar_tickets"]) <= 20
 
-    def test_limit_parameter_invalid(self, ticket_with_many_similar):
+    def test_limit_parameter_invalid(self, client, ticket_with_many_similar):
         """Invalid limit should be rejected or handled gracefully"""
         ticket_id = ticket_with_many_similar["id"]
 
@@ -236,13 +236,13 @@ class TestSimilarTicketsParameters:
 class TestSimilarTicketsEdgeCases:
     """Test edge cases and error handling"""
 
-    def test_similar_tickets_nonexistent_ticket(self):
+    def test_similar_tickets_nonexistent_ticket(self, client):
         """Request for non-existent ticket should return 404"""
         fake_id = str(uuid4())
         r = client.get(f"/tickets/{fake_id}/similar")
         assert r.status_code == 404
 
-    def test_similar_tickets_invalid_uuid(self):
+    def test_similar_tickets_invalid_uuid(self, client):
         """Invalid UUID should return 422 or 404"""
         r = client.get("/tickets/invalid-uuid/similar")
         assert r.status_code in [404, 422]
@@ -254,7 +254,7 @@ class TestSimilarTicketsEdgeCases:
         # by checking response structure
         pass
 
-    def test_similar_tickets_single_ticket(self):
+    def test_similar_tickets_single_ticket(self, client):
         """When only one ticket exists, should return empty list"""
         # Create a unique ticket
         unique_ticket = {
@@ -279,7 +279,7 @@ class TestSimilarTicketsEdgeCases:
 class TestSimilarTicketsPreview:
     """Test preview text generation"""
 
-    def test_preview_truncation(self):
+    def test_preview_truncation(self, client):
         """Preview should be truncated to 150 characters"""
         # Create ticket with long body
         long_body = "This is a very long ticket body. " * 20  # Much longer than 150 chars
@@ -301,7 +301,7 @@ class TestSimilarTicketsPreview:
             # Preview should be <= 153 chars (150 + "...")
             assert len(similar["preview"]) <= 153
 
-    def test_preview_no_truncation_short_body(self):
+    def test_preview_no_truncation_short_body(self, client):
         """Short body should not be truncated"""
         short_body = "Short ticket body"
         ticket_data = {
@@ -317,7 +317,7 @@ class TestSimilarTicketsPreview:
 class TestSimilarTicketsPerformance:
     """Test performance of similar tickets endpoint"""
 
-    def test_similar_tickets_response_time(self):
+    def test_similar_tickets_response_time(self, client):
         """Similar tickets should respond quickly"""
         import time
 

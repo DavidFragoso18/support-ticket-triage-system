@@ -1,262 +1,188 @@
-# -------- Settings --------
-BACKEND_DIR := backend
-FRONTEND_DIR := frontend
-APP_MODULE  := app.main:app
-PORT        := 8000
-FRONTEND_PORT := 3000
+# ============================================================
+#  Support Ticket Triage — Makefile
+# ============================================================
 
-# DB settings
-DB_CONTAINER := triage-pg
-DB_IMAGE     := pgvector/pgvector:pg16   # <— pgvector-enabled Postgres
-DB_NAME      := triage
-DB_USER      := postgres
-DB_PASS      := postgres
-DB_PORT      := 5432
-DB_VOLUME    := triage_pg_data
+# ---- Paths ----
+BACKEND_DIR    := backend
+FRONTEND_DIR   := frontend
 
-# Use the project's venv Python (detect OS)
-ifeq ($(OS),Windows_NT)
-	PYTHON := backend/.venv/Scripts/python.exe
-	PYTHON_LOCAL := .venv/Scripts/python.exe
-else
-	PYTHON := backend/.venv/bin/python
-	PYTHON_LOCAL := .venv/bin/python
-endif
+# ---- Python (venv) ----
+PYTHON         := $(BACKEND_DIR)/.venv/bin/python
+PIP            := $(BACKEND_DIR)/.venv/bin/pip
 
-# Docker Compose settings
-DOCKER_COMPOSE := docker-compose
-ENV_FILE := .env
+# ---- App ----
+APP_MODULE     := app.main:app
+PORT           := 8000
+FRONTEND_PORT  := 3000
 
-.PHONY: help up up-local up-db up-api down down-db logs db lint test test-phase2 test-phase3 test-phase4 test-all-phases test-docker which-python seed seed-kb seed-resolutions deploy deploy-local build-frontend start-frontend install-frontend docker-up docker-down docker-logs docker-build docker-deploy docker-clean
+# ---- Docker Compose ----
+DOCKER         := /usr/local/bin/docker
+DC             := $(DOCKER) compose
+ENV_FILE       := .env
 
+# ---- Ollama ----
+OLLAMA_CONTAINER := ollama
+OLLAMA_MODEL     := llama3.2:latest
+
+.PHONY: help \
+        up down deploy logs \
+        up-backend up-frontend \
+        up-ollama pull-model \
+        setup \
+        lint test \
+        seed seed-kb seed-resolutions \
+        clean
+
+# ============================================================
+#  HELP
+# ============================================================
 help:
-	@echo "=== Quick Commands (Docker Compose) ==="
-	@echo "make up          - Start all services with Docker Compose"
-	@echo "make down        - Stop all Docker Compose services"
-	@echo "make deploy      - Build and deploy with Docker Compose"
 	@echo ""
-	@echo "=== Docker Compose ==="
-	@echo "make docker-up   - Start all services"
-	@echo "make docker-down - Stop all services"
-	@echo "make docker-logs - View logs (all services)"
-	@echo "make docker-build- Build Docker images"
-	@echo "make docker-deploy - Build and deploy"
-	@echo "make docker-clean- Stop and remove all (including volumes)"
+	@echo "╔══════════════════════════════════════════════════════╗"
+	@echo "║           Support Ticket Triage — Commands           ║"
+	@echo "╠══════════════════════════════════════════════════════╣"
+	@echo "║  FULL STACK                                          ║"
+	@echo "║    make up           Start all services (Docker)     ║"
+	@echo "║    make down         Stop all services               ║"
+	@echo "║    make deploy       Build images + start all        ║"
+	@echo "║    make logs         Tail all container logs         ║"
+	@echo "╠══════════════════════════════════════════════════════╣"
+	@echo "║  INDIVIDUAL SERVICES                                 ║"
+	@echo "║    make up-backend   Start only the backend          ║"
+	@echo "║    make up-frontend  Start only the frontend         ║"
+	@echo "║    make up-ollama    Start Ollama container + model  ║"
+	@echo "╠══════════════════════════════════════════════════════╣"
+	@echo "║  DEVELOPMENT                                         ║"
+	@echo "║    make setup        Install all deps (venv + npm)   ║"
+	@echo "║    make lint         Run ruff + black checks         ║"
+	@echo "║    make test         Run all pytest tests            ║"
+	@echo "╠══════════════════════════════════════════════════════╣"
+	@echo "║  DATABASE                                            ║"
+	@echo "║    make seed         Seed KB + resolutions           ║"
+	@echo "║    make seed-kb      Seed KB articles only           ║"
+	@echo "║    make seed-resolutions  Seed resolutions only      ║"
+	@echo "╠══════════════════════════════════════════════════════╣"
+	@echo "║  CLEANUP                                             ║"
+	@echo "║    make clean        Stop + remove all volumes       ║"
+	@echo "╚══════════════════════════════════════════════════════╝"
 	@echo ""
-	@echo "=== Local Development (venv) ==="
-	@echo "make up-local    - Start DB + API (dev with venv)"
-	@echo "make up-db       - Start Postgres (pgvector) only"
-	@echo "make up-api      - Start FastAPI only (uses venv python)"
-	@echo "make down-db     - Stop local Postgres container"
+
+# ============================================================
+#  FULL STACK  (Docker Compose)
+# ============================================================
+
+## Start all services (no rebuild)
+up:
+	@[ -f "$(ENV_FILE)" ] || cp .env.docker $(ENV_FILE)
+	@echo "🐳 Starting all services..."
+	$(DC) up -d
 	@echo ""
-	@echo "=== Database ==="
-	@echo "make db          - psql into triage DB"
-	@echo "make seed        - Seed KB and resolutions"
-	@echo "make seed-kb     - Seed KB articles only"
-	@echo "make seed-resolutions - Seed resolutions only"
+	@echo "✅ All services running!"
+	@echo "   Backend  → http://localhost:$(PORT)/docs"
+	@echo "   Frontend → http://localhost:$(FRONTEND_PORT)"
+
+## Stop all services
+down:
+	@echo "🛑 Stopping all services..."
+	$(DC) down
+	@echo "✅ Done."
+
+## Build images and start everything
+deploy:
+	@[ -f "$(ENV_FILE)" ] || cp .env.docker $(ENV_FILE)
+	@echo "🔨 Building images..."
+	$(DC) build
+	@echo "🚀 Deploying..."
+	$(DC) up -d
 	@echo ""
-	@echo "=== Development ==="
-	@echo "make logs        - Tail Postgres logs"
-	@echo "make lint        - Ruff + Black check"
-	@echo "make test        - Run pytest (local)"
-	@echo "make which-python- Show which Python is used"
-	@echo ""
-	@echo "=== Testing (Docker) ==="
-	@echo "make test-phase2 - Run Phase 2 tests (Filters & Suggestions)"
-	@echo "make test-phase3 - Run Phase 3 tests (Analytics Dashboard)"
-	@echo "make test-phase4 - Run Phase 4 tests (Similar Tickets & Embeddings)"
-	@echo "make test-all-phases - Run all Phase 2, 3, 4 tests"
-	@echo "make test-docker - Run all tests in Docker container"
-	@echo ""
-	@echo "=== Frontend ==="
-	@echo "make build-frontend - Build frontend for production"
-	@echo "make install-frontend - Install frontend dependencies"
-	@echo ""
-	@echo "=== Quick Commands ==="
-	@echo "make deploy      - Deploy full stack with Docker Compose"
+	@echo "✅ Deployment complete!"
+	@echo "   Backend  → http://localhost:$(PORT)/docs"
+	@echo "   Frontend → http://localhost:$(FRONTEND_PORT)"
+	@echo "   Database → localhost:5432"
 
-# Main targets (Docker Compose by default)
-up: docker-up
-
-down: docker-down
-
-# Legacy local development targets
-up-local: up-db up-api
-
-# Start pgvector-enabled Postgres; create a named volume so data persists
-up-db:
-	@echo "Starting Postgres (pgvector)..."
-	-@docker volume create $(DB_VOLUME) >nul 2>&1
-	-@docker stop $(DB_CONTAINER) >nul 2>&1
-	-@docker rm $(DB_CONTAINER) >nul 2>&1
-	@docker run --name $(DB_CONTAINER) \
-		-e POSTGRES_PASSWORD=$(DB_PASS) -e POSTGRES_USER=$(DB_USER) -e POSTGRES_DB=$(DB_NAME) \
-		-p $(DB_PORT):5432 -v $(DB_VOLUME):/var/lib/postgresql/data -d $(DB_IMAGE)
-	@echo "Ensuring pgvector extension exists..."
-	@powershell -Command "Start-Sleep -Seconds 3"
-	-@docker exec -t $(DB_CONTAINER) psql -U $(DB_USER) -d $(DB_NAME) -c "CREATE EXTENSION IF NOT EXISTS vector;" >nul 2>&1
-
-up-api:
-	@echo "Starting FastAPI on http://localhost:$(PORT) ..."
-	$(PYTHON) -m uvicorn $(APP_MODULE) --reload --port $(PORT) --app-dir $(BACKEND_DIR)
-
-down-db:
-	@echo "Stopping local Postgres container..."
-	-@docker stop $(DB_CONTAINER)
-	-@docker rm $(DB_CONTAINER)
-	@echo "✅ Database stopped!"
-
+## Tail all container logs
 logs:
-	docker logs -f $(DB_CONTAINER)
+	$(DC) logs -f
 
-db:
-	docker exec -it $(DB_CONTAINER) psql -U $(DB_USER) -d $(DB_NAME)
+# ============================================================
+#  INDIVIDUAL SERVICES
+# ============================================================
 
-lint:
-	cd $(BACKEND_DIR) && $(PYTHON) -m ruff check . && $(PYTHON) -m black --check .
+## Start only the backend container
+up-backend:
+	@echo "🚀 Starting backend..."
+	$(DC) up -d db redis backend
+	@echo "✅ Backend running → http://localhost:$(PORT)/docs"
 
-test:
-	$(PYTHON) -m pytest -q --rootdir=$(BACKEND_DIR)
+## Start only the frontend container
+up-frontend:
+	@echo "🚀 Starting frontend..."
+	$(DC) up -d frontend
+	@echo "✅ Frontend running → http://localhost:$(FRONTEND_PORT)"
 
-# Phase-specific tests (run in Docker container)
-test-phase2:
-	@echo "🧪 Running Phase 2 tests (Filters & Suggestions)..."
-	docker cp backend/tests triage-backend:/app/
-	docker exec -e PYTHONPATH=/app triage-backend pytest /app/tests/test_phase2_comprehensive.py -v
-	@echo "✅ Phase 2 tests complete!"
+## Start (or restart) the existing Ollama container, join the triage network, and ensure the model is present
+up-ollama:
+	@echo "🤖 Starting Ollama container..."
+	$(DOCKER) start $(OLLAMA_CONTAINER)
+	@echo "🔗 Connecting Ollama to triage network (safe to ignore if already connected)..."
+	-$(DOCKER) network connect support-ticket-triage-system_triage-network $(OLLAMA_CONTAINER)
+	@echo "📦 Pulling model $(OLLAMA_MODEL) (skipped if already present)..."
+	$(DOCKER) exec $(OLLAMA_CONTAINER) ollama pull $(OLLAMA_MODEL)
+	@echo "✅ Ollama is ready at http://localhost:11434"
 
-test-phase3:
-	@echo "🧪 Running Phase 3 tests (Analytics Dashboard)..."
-	docker cp backend/tests triage-backend:/app/
-	docker exec -e PYTHONPATH=/app triage-backend pytest /app/tests/test_analytics.py -v
-	@echo "✅ Phase 3 tests complete!"
+# ============================================================
+#  DEVELOPMENT  (local venv — no Docker for the app itself)
+# ============================================================
 
-test-phase4:
-	@echo "🧪 Running Phase 4 tests (Similar Tickets & Embeddings)..."
-	docker cp backend/tests triage-backend:/app/
-	docker exec -e PYTHONPATH=/app triage-backend pytest /app/tests/test_similar_tickets.py /app/tests/test_embeddings.py /app/tests/test_ticket_creation.py -v
-	@echo "✅ Phase 4 tests complete!"
-
-test-all-phases:
-	@echo "🧪 Running all Phase 2, 3, and 4 tests..."
-	docker cp backend/tests triage-backend:/app/
-	docker exec -e PYTHONPATH=/app triage-backend pytest /app/tests/test_phase2_backend.py /app/tests/test_analytics.py /app/tests/test_similar_tickets.py /app/tests/test_embeddings.py /app/tests/test_ticket_creation.py -v --tb=short
+## Install backend (venv) + frontend (npm) dependencies
+setup:
+	@echo "🚀 Setting up development environment..."
+	@echo "1️⃣  Creating Python virtual environment..."
+	cd $(BACKEND_DIR) && python3.11 -m venv .venv || python3 -m venv .venv
+	@echo "2️⃣  Installing backend dependencies..."
+	$(PIP) install --upgrade pip
+	$(PIP) install -e $(BACKEND_DIR)
+	@echo "3️⃣  Installing frontend dependencies..."
+	cd $(FRONTEND_DIR) && npm install
 	@echo ""
-	@echo "✅ All phase tests complete!"
+	@echo "✅ Setup complete!"
+	@echo "   Run 'make up' to start all services with Docker."
 
-test-docker:
-	@echo "🧪 Running all tests in Docker container..."
-	docker cp backend/tests triage-backend:/app/
-	docker exec -e PYTHONPATH=/app triage-backend pytest /app/tests/ -v --tb=short
-	@echo "✅ All tests complete!"
+## Run ruff linter + black formatter check
+lint:
+	@echo "🔍 Running linter..."
+	$(PYTHON) -m ruff check $(BACKEND_DIR)
+	$(PYTHON) -m black --check $(BACKEND_DIR)
+	@echo "✅ Lint passed."
 
-which-python:
-	@echo "Using Python:" && $(PYTHON) -c "import sys,platform; print(sys.executable); print(platform.python_version())"
+## Run all pytest tests (via Docker backend container)
+test:
+	@echo "🧪 Running tests..."
+	$(DOCKER) exec -e PYTHONPATH=/app triage-backend pytest /app/tests/ -v --tb=short
+	@echo "✅ Tests complete."
 
-# --- Seeding (run from backend/ to resolve 'app.*' modules reliably) ---
-seed:
-	@echo "Seeding KB articles from data/seeds/kb_articles.csv ..."
-	cd $(BACKEND_DIR) && $(PYTHON_LOCAL) -m app.scripts.seed_kb
-	@echo "Seeding resolutions from data/seeds/resolutions.csv ..."
-	cd $(BACKEND_DIR) && $(PYTHON_LOCAL) -m app.scripts.seed_resolutions
-	@echo "✅ All seeds completed."
+# ============================================================
+#  DATABASE SEEDING
+# ============================================================
+
+seed: seed-kb seed-resolutions
 
 seed-kb:
-	@echo "Seeding KB articles from data/seeds/kb_articles.csv ..."
-	cd $(BACKEND_DIR) && $(PYTHON_LOCAL) -m app.scripts.seed_kb
+	@echo "🌱 Seeding KB articles..."
+	cd $(BACKEND_DIR) && .venv/bin/python -m app.scripts.seed_kb
+	@echo "✅ KB articles seeded."
 
 seed-resolutions:
-	@echo "Seeding resolutions from data/seeds/resolutions.csv ..."
-	cd $(BACKEND_DIR) && $(PYTHON_LOCAL) -m app.scripts.seed_resolutions
+	@echo "🌱 Seeding resolutions..."
+	cd $(BACKEND_DIR) && .venv/bin/python -m app.scripts.seed_resolutions
+	@echo "✅ Resolutions seeded."
 
-# --- Frontend targets ---
-install-frontend:
-	@echo "Installing frontend dependencies..."
-	cd $(FRONTEND_DIR) && npm install
+# ============================================================
+#  CLEANUP
+# ============================================================
 
-build-frontend:
-	@echo "Building frontend for production..."
-	cd $(FRONTEND_DIR) && npm run build
-
-start-frontend:
-	@echo "Starting frontend on http://localhost:$(FRONTEND_PORT) ..."
-	cd $(FRONTEND_DIR) && npm run dev
-
-# --- Docker Compose Commands ---
-docker-up:
-	@echo "🐳 Starting all services with Docker Compose..."
-	@if [ ! -f "$(ENV_FILE)" ]; then \
-		echo "📝 Creating .env from .env.docker..."; \
-		cp .env.docker .env; \
-	fi
-	$(DOCKER_COMPOSE) up -d
-	@echo "✅ Services started!"
-	@echo ""
-	@echo "Access URLs:"
-	@echo "  Backend API: http://localhost:8000/docs"
-	@echo "  Frontend: http://localhost:3000"
-	@echo ""
-	@echo "View logs: make docker-logs"
-
-docker-down:
-	@echo "🛑 Stopping all Docker Compose services..."
-	$(DOCKER_COMPOSE) down
-	@echo "✅ Services stopped!"
-
-docker-logs:
-	@echo "📋 Viewing Docker Compose logs (Ctrl+C to exit)..."
-	$(DOCKER_COMPOSE) logs -f
-
-docker-build:
-	@echo "🔨 Building Docker images..."
-	$(DOCKER_COMPOSE) build
-	@echo "✅ Build complete!"
-
-docker-deploy: docker-build
-	@echo "🚀 Deploying with Docker Compose..."
-	@if [ ! -f "$(ENV_FILE)" ]; then \
-		echo "📝 Creating .env from .env.docker..."; \
-		cp .env.docker .env; \
-	fi
-	$(DOCKER_COMPOSE) up -d
-	@echo ""
-	@echo "⏳ Waiting for services to start (30 seconds)..."
-	@sleep 30
-	@echo ""
-	@echo "✅ Deployment complete!"
-	@echo ""
-	@echo "Access URLs:"
-	@echo "  Backend API: http://localhost:8000/docs"
-	@echo "  Frontend: http://localhost:3000"
-	@echo "  Database: localhost:5432"
-	@echo ""
-	@echo "Useful commands:"
-	@echo "  make docker-logs  - View logs"
-	@echo "  make docker-down  - Stop services"
-	@echo "  make seed         - Seed database"
-
-docker-clean:
-	@echo "🗑️  Cleaning up Docker Compose resources..."
-	$(DOCKER_COMPOSE) down -v
-	@echo "✅ Cleanup complete!"
-
-# --- Deployment (Docker Compose) ---
-deploy: docker-deploy
-
-# Legacy local deployment
-deploy-local: up-db install-frontend build-frontend
-	@echo "🚀 Deploying support ticket triage system (local dev)..."
-	@echo "1. Database is starting..."
-	@sleep 5
-	@echo "2. Seeding database..."
-	$(MAKE) seed
-	@echo "3. Starting backend API..."
-	@echo "   Backend will be available at http://localhost:$(PORT)"
-	@echo "4. Frontend built and ready to serve"
-	@echo "   To start frontend: make start-frontend"
-	@echo "✅ Deployment complete!"
-	@echo ""
-	@echo "Next steps:"
-	@echo "  - Backend API: http://localhost:$(PORT)"
-	@echo "  - Run 'make start-frontend' for frontend at http://localhost:$(FRONTEND_PORT)"
-	@echo "  - Run 'make up-api' to start the backend server"
+## Stop all services and remove volumes (destructive)
+clean:
+	@echo "🗑️  Removing all containers and volumes..."
+	$(DC) down -v
+	@echo "✅ Cleanup done."

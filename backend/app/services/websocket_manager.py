@@ -2,7 +2,7 @@
 
 import json
 import logging
-from typing import Dict, Set
+from typing import Dict, Set, Optional
 
 import redis.asyncio as redis
 from fastapi import WebSocket
@@ -21,7 +21,7 @@ class ConnectionManager:
         # Store agent subscriptions (agent_id -> set of connection IDs)
         self.agent_subscriptions: Dict[str, Set[str]] = {}
         # Redis connection for pub/sub across multiple backend instances
-        self.redis_client: redis.Redis | None = None
+        self.redis_client: Optional[redis.Redis] = None
         self.pubsub = None
 
     async def connect_redis(self):
@@ -42,7 +42,7 @@ class ConnectionManager:
             await self.redis_client.close()
             logger.info("Redis connection closed")
 
-    async def connect(self, websocket: WebSocket, connection_id: str, agent_id: str | None = None):
+    async def connect(self, websocket: WebSocket, connection_id: str, agent_id: Optional[str] = None):
         """Accept a new WebSocket connection"""
         await websocket.accept()
         self.active_connections[connection_id] = websocket
@@ -56,7 +56,7 @@ class ConnectionManager:
         logger.info(f"✅ WebSocket connected: {connection_id} (agent: {agent_id})")
         logger.info(f"📊 Active connections: {len(self.active_connections)}")
 
-    def disconnect(self, connection_id: str, agent_id: str | None = None):
+    def disconnect(self, connection_id: str, agent_id: Optional[str] = None):
         """Remove a WebSocket connection"""
         if connection_id in self.active_connections:
             del self.active_connections[connection_id]
@@ -85,7 +85,7 @@ class ConnectionManager:
             for connection_id in list(self.agent_subscriptions[agent_id]):
                 await self.send_personal_message(message, connection_id)
 
-    async def broadcast(self, message: dict, exclude: str | None = None):
+    async def broadcast(self, message: dict, exclude: Optional[str] = None):
         """Broadcast a message to all connected clients"""
         disconnected = []
         for connection_id, websocket in self.active_connections.items():

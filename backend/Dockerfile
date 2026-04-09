@@ -51,7 +51,6 @@ USER appuser
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PATH="/home/appuser/.local/bin:${PATH}" \
-    TRANSFORMERS_CACHE=/home/appuser/.cache/huggingface \
     HF_HOME=/home/appuser/.cache/huggingface
 
 # Expose port
