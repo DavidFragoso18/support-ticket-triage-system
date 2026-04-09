@@ -224,7 +224,11 @@ async def release_ticket(ticket_id: str, session: Session = Depends(get_session)
     )
     await manager.notify_ticket_released(ticket_id=ticket_id, ticket_data=ticket_out.model_dump())
 
-    return {"success": True, "message": f"Ticket {ticket_id} released", "ticket": ticket_out.model_dump()}
+    return {
+        "success": True,
+        "message": f"Ticket {ticket_id} released",
+        "ticket": ticket_out.model_dump(),
+    }
 
 
 @router.get("/ws/status")
