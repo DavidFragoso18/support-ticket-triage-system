@@ -16,6 +16,7 @@ from sqlmodel import Session
 
 from app.db.base import get_session
 from app.db.models.ticket import Ticket
+from app.schemas.ticket import ClassificationOut, TicketOut
 from app.services.websocket_manager import manager
 
 router = APIRouter()
@@ -117,14 +118,38 @@ async def claim_ticket(ticket_id: str, agent_id: str, session: Session = Depends
     session.commit()
 
     # Broadcast the claim to all connected clients
+    ticket_out = TicketOut(
+        id=ticket.id,
+        subject=ticket.subject,
+        body=ticket.body,
+        channel=ticket.channel,
+        customer_id=ticket.customer_id,
+        language=ticket.language,
+        status=ticket.status,
+        assigned_agent_id=ticket.assigned_agent_id,
+        created_at=ticket.created_at,
+        updated_at=ticket.updated_at,
+        classification=(
+            ClassificationOut(
+                id=ticket.classification.id,
+                intent=ticket.classification.intent,
+                sentiment=ticket.classification.sentiment,
+                priority=ticket.classification.priority,
+                confidence=ticket.classification.confidence,
+                low_confidence=ticket.classification.low_confidence,
+            )
+            if ticket.classification
+            else None
+        ),
+    )
     await manager.notify_ticket_claimed(
-        ticket_id=ticket_id, agent_id=agent_id, ticket_data=ticket.model_dump()
+        ticket_id=ticket_id, agent_id=agent_id, ticket_data=ticket_out.model_dump()
     )
 
     return {
         "success": True,
         "message": f"Ticket {ticket_id} claimed by agent {agent_id}",
-        "ticket": ticket,
+        "ticket": ticket_out.model_dump(),
     }
 
 
@@ -173,9 +198,33 @@ async def release_ticket(ticket_id: str, session: Session = Depends(get_session)
         session.commit()
 
     # Broadcast the release to all connected clients
-    await manager.notify_ticket_released(ticket_id=ticket_id, ticket_data=ticket.model_dump())
+    ticket_out = TicketOut(
+        id=ticket.id,
+        subject=ticket.subject,
+        body=ticket.body,
+        channel=ticket.channel,
+        customer_id=ticket.customer_id,
+        language=ticket.language,
+        status=ticket.status,
+        assigned_agent_id=ticket.assigned_agent_id,
+        created_at=ticket.created_at,
+        updated_at=ticket.updated_at,
+        classification=(
+            ClassificationOut(
+                id=ticket.classification.id,
+                intent=ticket.classification.intent,
+                sentiment=ticket.classification.sentiment,
+                priority=ticket.classification.priority,
+                confidence=ticket.classification.confidence,
+                low_confidence=ticket.classification.low_confidence,
+            )
+            if ticket.classification
+            else None
+        ),
+    )
+    await manager.notify_ticket_released(ticket_id=ticket_id, ticket_data=ticket_out.model_dump())
 
-    return {"success": True, "message": f"Ticket {ticket_id} released", "ticket": ticket}
+    return {"success": True, "message": f"Ticket {ticket_id} released", "ticket": ticket_out.model_dump()}
 
 
 @router.get("/ws/status")

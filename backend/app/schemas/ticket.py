@@ -29,6 +29,8 @@ class TicketOut(BaseModel):
     channel: str
     customer_id: Optional[str]
     language: Optional[str]
+    status: str = "open"
+    assigned_agent_id: Optional[str] = None
     created_at: datetime
     updated_at: datetime
     classification: Optional[ClassificationOut] = None
@@ -36,6 +38,8 @@ class TicketOut(BaseModel):
     intent: Optional[str] = None
     sentiment: Optional[str] = None
     priority: Optional[str] = None
+
+    model_config = {"from_attributes": True}
 
 
 class TicketListOut(BaseModel):

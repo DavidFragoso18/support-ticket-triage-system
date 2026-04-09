@@ -85,6 +85,8 @@ async def create_ticket(
             channel=ticket.channel,
             customer_id=ticket.customer_id,
             language=ticket.language,
+            status=ticket.status,
+            assigned_agent_id=ticket.assigned_agent_id,
             created_at=ticket.created_at,
             updated_at=ticket.updated_at,
             classification=ClassificationOut(
@@ -140,6 +142,8 @@ def get_ticket(
             channel=ticket.channel,
             customer_id=ticket.customer_id,
             language=ticket.language,
+            status=ticket.status,
+            assigned_agent_id=ticket.assigned_agent_id,
             created_at=ticket.created_at,
             updated_at=ticket.updated_at,
             classification=(
@@ -246,6 +250,8 @@ def list_tickets(
                     channel=t.channel,
                     customer_id=t.customer_id,
                     language=t.language,
+                    status=t.status,
+                    assigned_agent_id=t.assigned_agent_id,
                     created_at=t.created_at,
                     updated_at=t.updated_at,
                     classification=(

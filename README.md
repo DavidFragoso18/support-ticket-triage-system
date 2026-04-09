@@ -188,7 +188,8 @@ make up-db
 ```bash
 cd backend
 py -3.11 -m venv .venv
-.\.venv\Scriptsctivate
+.\.venv\Scripts\activate
+(mac: source .venv/bin/activate)
 pip install -U pip
 pip install -e .
 ```

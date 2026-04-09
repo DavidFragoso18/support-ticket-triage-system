@@ -13,6 +13,6 @@ NEAR_TIE_DELTA=0.05
 
 # LLM Configuration
 OLLAMA_URL=http://ollama:11434
-LLM_MODEL=llama3.2:latest
+LLM_MODEL=phi3:mini
 USE_OLLAMA=true
 

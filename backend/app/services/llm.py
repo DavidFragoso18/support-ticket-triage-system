@@ -16,7 +16,7 @@ class LLMService:
     def __init__(self):
         self.ollama_url = os.getenv("OLLAMA_URL", "http://localhost:11434")
         self.openai_api_key = os.getenv("OPENAI_API_KEY", "")
-        self.model = os.getenv("LLM_MODEL", "llama3.2:latest")
+        self.model = os.getenv("LLM_MODEL", "phi3:mini")
         self.use_ollama = os.getenv("USE_OLLAMA", "true").lower() == "true"
 
     async def generate_response(
